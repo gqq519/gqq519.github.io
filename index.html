@@ -132,68 +132,6 @@
           <div id="js-content" class="content-ll">
             
   
-    <article id="post-Fragment点击穿透的解决方案-md" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/04/19/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/">Fragment点击穿透的解决方案.md</a>
-    </h1>
-  
-
-        
-        <a href="/2020/04/19/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/" class="archive-article-date">
-  	<time datetime="2020-04-19T13:51:57.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-04-19</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/04/19/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
     <article id="post-Fragment叠加点击穿透的解决方案" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -215,21 +153,21 @@
     <div class="article-entry" itemprop="articleBody">
       
         <pre><code>title: Fragment点击穿透的解决方案.md
-date: 2020-04-19 21:51:57
+date: 2017-05-13 21:51:57
 tags: Android常见问题</code></pre><p>##Fragment叠加出现点击穿透的解决方案##</p>
 <p>参考文档：<br><a href="https://blog.csdn.net/dong19870625/article/details/50550147" target="_blank" rel="noopener">https://blog.csdn.net/dong19870625/article/details/50550147</a><br><a href="https://blog.csdn.net/joye123/article/details/77075274" target="_blank" rel="noopener">https://blog.csdn.net/joye123/article/details/77075274</a></p>
 <p>Fragment在开发中很常见，经常会有Fragment叠加的需求，最近在开发中遇到一个现象，在Fragment中add 多个Fragment的时候，当最上方的Fragment点击空白处时，会发生点击穿透，下层在所点击处对应的控件的点击事件就会被触发，怎么解决呢？</p>
 <h3 id="出现问题的原因"><a href="#出现问题的原因" class="headerlink" title="出现问题的原因"></a>出现问题的原因</h3><p>原因：Fragment的本质就是一个View布局的管理器，当Fragment attach到Activity时，其实就是把Fragment#onCreateView()返回的View，替换掉(如果是用replace)FragmentTransaction#replace中指定的View，或者添加到(如果是add)FragmentTransaction#add()中指定的ViewGroup里面。<br>当我们以层叠方式显示多个Fragment时，通常的做法就是弄一个FrameLayout，然后每次把Fragment add到此布局。因此，这时Activity的页面布局树实际上就是一个FrameLayout里面包含几个View。<br>所以，当点击上面Fragment的空白区域时，如果事件没被吃掉，就会向下传递。 </p>
 <h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p><strong>方式一：在根布局中添加属性android:clickable=”true”</strong></p>
-<p><img src="http://oo8dhx402.bkt.clouddn.com/18-3-29/58626119.jpg" alt=""></p>
+<p><img src="/Users/gqq/blog/source/blog_img/clickable.png" alt=""></p>
 <p>或者在代码中设置：</p>
-<p><img src="http://oo8dhx402.bkt.clouddn.com/18-3-29/8321280.jpg" alt=""></p>
+<p><img src="/Users/gqq/blog/source/blog_img/clickable_code.png" alt=""></p>
 <p>缺点：需要在每一个Fragment的根布局处添加，Fragment较多的时候，工作量大。</p>
 <p><strong>方式二：创建Fragment的基类，在基类中为View添加触摸监听，并返回true</strong></p>
-<p><img src="http://oo8dhx402.bkt.clouddn.com/18-3-29/59867854.jpg" alt=""></p>
+<p><img src="/Users/gqq/blog/source/blog_img/touchlistener.png" alt=""></p>
 <p>这种方式避免了多处添加clickable的麻烦，但是同时带来一个问题，如果Fragment的根布局使用的是ScrollView，那么就无法滚动了，因为触摸事件已经消费掉了，但如果根布局不是ScrollView的话，就可以用此方式。</p>
 <p><strong>方式三：在基类中为 View设置点击监听，而不是触摸监听</strong></p>
-<p><img src="http://oo8dhx402.bkt.clouddn.com/18-3-29/46473812.jpg" alt=""></p>
+<p><img src="/Users/gqq/blog/source/blog_img/clicklistener.png" alt=""></p>
 <p>此方式可以解决事件穿透，同时不影响根布局是ScrollView的情况。</p>
 <p>简单验证Demo：<a href="https://github.com/gqq519/FragmentClickIssue" target="_blank" rel="noopener">https://github.com/gqq519/FragmentClickIssue</a></p>
 
