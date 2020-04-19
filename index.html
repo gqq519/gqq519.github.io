@@ -154,7 +154,7 @@
       
         <pre><code>title: Fragment点击穿透的解决方案.md
 date: 2017-05-13 21:51:57
-tags: Android常见问题</code></pre><p>##Fragment叠加出现点击穿透的解决方案##</p>
+tags: Android常见问题</code></pre><p>##Fragment叠加出现点击穿透的解决方案</p>
 <p>参考文档：<br><a href="https://blog.csdn.net/dong19870625/article/details/50550147" target="_blank" rel="noopener">https://blog.csdn.net/dong19870625/article/details/50550147</a><br><a href="https://blog.csdn.net/joye123/article/details/77075274" target="_blank" rel="noopener">https://blog.csdn.net/joye123/article/details/77075274</a></p>
 <p>Fragment在开发中很常见，经常会有Fragment叠加的需求，最近在开发中遇到一个现象，在Fragment中add 多个Fragment的时候，当最上方的Fragment点击空白处时，会发生点击穿透，下层在所点击处对应的控件的点击事件就会被触发，怎么解决呢？</p>
 <h3 id="出现问题的原因"><a href="#出现问题的原因" class="headerlink" title="出现问题的原因"></a>出现问题的原因</h3><p>原因：Fragment的本质就是一个View布局的管理器，当Fragment attach到Activity时，其实就是把Fragment#onCreateView()返回的View，替换掉(如果是用replace)FragmentTransaction#replace中指定的View，或者添加到(如果是add)FragmentTransaction#add()中指定的ViewGroup里面。<br>当我们以层叠方式显示多个Fragment时，通常的做法就是弄一个FrameLayout，然后每次把Fragment add到此布局。因此，这时Activity的页面布局树实际上就是一个FrameLayout里面包含几个View。<br>所以，当点击上面Fragment的空白区域时，如果事件没被吃掉，就会向下传递。 </p>
