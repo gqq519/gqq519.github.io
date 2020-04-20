@@ -6,19 +6,14 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://gqq519.github.io">
-  <title>onCreate中view获取宽高的方法.md | Hexo</title>
+  <title>Archives: 2017/7 | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="在onCreate方法中无法获取到view具体的宽高，但有时候我们需要拿到某控件的宽高进行计算，比较实用的可以通过几种方式： 1.view.getViewTreeObserver().addOnGlobalLayoutListener()通过View的层次观察者注册全局监听，当view的布局状态、可见性等发生变化时会触发，所以可能会被调用多次，仅用其获取view宽高时，获取到之后需要移除监听。 1">
-<meta property="og:type" content="article">
-<meta property="og:title" content="onCreate中view获取宽高的方法.md">
-<meta property="og:url" content="https://gqq519.github.io/2020/04/20/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/index.html">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="https://gqq519.github.io/archives/2017/07/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="在onCreate方法中无法获取到view具体的宽高，但有时候我们需要拿到某控件的宽高进行计算，比较实用的可以通过几种方式： 1.view.getViewTreeObserver().addOnGlobalLayoutListener()通过View的层次观察者注册全局监听，当view的布局状态、可见性等发生变化时会触发，所以可能会被调用多次，仅用其获取view宽高时，获取到之后需要移除监听。 1">
 <meta property="og:locale" content="zh">
-<meta property="article:published_time" content="2020-04-20T15:06:11.000Z">
-<meta property="article:modified_time" content="2020-04-20T15:06:41.915Z">
 <meta property="article:author" content="gqq519">
-<meta property="article:tag" content="Android常见问题">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
@@ -135,68 +130,36 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-onCreate中view获取宽高的方法-md" class="article article-type-post " itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
+            
   
-    <h1 class="article-title" itemprop="name">
-      onCreate中view获取宽高的方法.md
+  
+    
+    
+      
+      
+      <section class="archives-wrap">
+        <div class="archive-year-wrap">
+          <a href="/archives/2017" class="archive-year">2017</a>
+        </div>
+        <div class="archives">
+    
+    <article class="archive-article archive-type-post">
+  <div class="archive-article-inner">
+    <header class="archive-article-header">
+      	<div class="article-meta">
+	      	<a href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/" class="archive-article-date">
+  	<time datetime="2017-07-24T13:06:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-07-24</time>
+</a>
+        </div>
+    	 
+  
+    <h1 itemprop="name">
+      <a class="archive-article-title" href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/">onCreate中view获取宽高的方法.md</a>
     </h1>
   
 
-        
-        <a href="/2020/04/20/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/" class="archive-article-date">
-  	<time datetime="2020-04-20T15:06:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-04-20</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>在onCreate方法中无法获取到view具体的宽高，但有时候我们需要拿到某控件的宽高进行计算，比较实用的可以通过几种方式：</p>
-<h4 id="1-view-getViewTreeObserver-addOnGlobalLayoutListener"><a href="#1-view-getViewTreeObserver-addOnGlobalLayoutListener" class="headerlink" title="1.view.getViewTreeObserver().addOnGlobalLayoutListener()"></a>1.view.getViewTreeObserver().addOnGlobalLayoutListener()</h4><p>通过View的层次观察者注册全局监听，当view的布局状态、可见性等发生变化时会触发，所以可能会被调用多次，仅用其获取view宽高时，获取到之后需要移除监听。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">textView.getViewTreeObserver().addOnGlobalLayoutListener(<span class="keyword">new</span> ViewTreeObserver.OnGlobalLayoutListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onGlobalLayout</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnGlobalLayoutListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.getViewTreeObserver().removeOnGlobalLayoutListener(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-view-post"><a href="#2-view-post" class="headerlink" title="2. view.post()"></a>2. view.post()</h4><p>Runnable 操作只有在 View 的 <strong>attachedToWindow</strong> 到 <strong>detachedFromWiondow</strong> 这期间才会被执行，所以可以通过此方法获取view的宽高。推荐使用。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">textView.post(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"View post:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-view-addOnLayoutChangeListener"><a href="#3-view-addOnLayoutChangeListener" class="headerlink" title="3. view.addOnLayoutChangeListener()"></a>3. view.addOnLayoutChangeListener()</h4><p>当布局边界发生变化时，会触发此监听，所以可以通过此监听获取到view的宽高，但可能会多次触发，因此在获取到宽高之后要移除监听。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">textView.addOnLayoutChangeListener(<span class="keyword">new</span> View.OnLayoutChangeListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onLayoutChange</span><span class="params">(View v, <span class="keyword">int</span> left, <span class="keyword">int</span> top, <span class="keyword">int</span> right, <span class="keyword">int</span> bottom, <span class="keyword">int</span> oldLeft, <span class="keyword">int</span> oldTop, <span class="keyword">int</span> oldRight, <span class="keyword">int</span> oldBottom)</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnLayoutChangeListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.removeOnLayoutChangeListener(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<h4 id="4-view-getViewTreeObserver-addOnPreDrawListener"><a href="#4-view-getViewTreeObserver-addOnPreDrawListener" class="headerlink" title="4. view.getViewTreeObserver().addOnPreDrawListener()"></a>4. view.getViewTreeObserver().addOnPreDrawListener()</h4><p>同1类似，此监听从绘制角度进行监听，可能会多次调用，所以同样，获取到宽高之后要移除监听。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">textView.getViewTreeObserver().addOnPreDrawListener(<span class="keyword">new</span> ViewTreeObserver.OnPreDrawListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onPreDraw</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnPreDrawListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.getViewTreeObserver().removeOnPreDrawListener(<span class="keyword">this</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-
-      
-
-      
-        <div class="page-reward">
-          <a href="javascript:;" class="page-reward-btn tooltip-top">
-            <div class="tooltip tooltip-east">
-            <span class="tooltip-item">
-              赏
-            </span>
-            <span class="tooltip-content">
-              <span class="tooltip-text">
-                <span class="tooltip-inner">
-                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
-                  <div class="reward-box">
-                    
-                    
-                  </div>
-                </span>
-              </span>
-            </span>
-          </div>
-          </a>
-        </div>
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
+        <div class="article-info info-on-right">
+          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -208,55 +171,19 @@
 		</ul>
 	</div>
 
-      
+          
 
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
+        </div>
+        <div class="clearfix"></div>
+    </header>
   </div>
 </article>
-
-  
-<nav id="article-nav">
   
   
-    <a href="/2017/04/23/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">Fragment点击穿透的解决方案.md</div>
-      <i class="icon-circle-right"></i>
-    </a>
-  
-</nav>
-
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-  
-  
+    </div></section>
   
 
-  
-
-  
-
-  
+    
 
 
           </div>
@@ -279,8 +206,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: true,
-		isArchive: false,
+		isPost: false,
+		isArchive: true,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,
