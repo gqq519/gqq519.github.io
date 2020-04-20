@@ -132,6 +132,92 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-onCreate中view获取宽高的方法-md" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/04/20/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/">onCreate中view获取宽高的方法.md</a>
+    </h1>
+  
+
+        
+        <a href="/2020/04/20/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/" class="archive-article-date">
+  	<time datetime="2020-04-20T15:06:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-04-20</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在onCreate方法中无法获取到view具体的宽高，但有时候我们需要拿到某控件的宽高进行计算，比较实用的可以通过几种方式：</p>
+<h4 id="1-view-getViewTreeObserver-addOnGlobalLayoutListener"><a href="#1-view-getViewTreeObserver-addOnGlobalLayoutListener" class="headerlink" title="1.view.getViewTreeObserver().addOnGlobalLayoutListener()"></a>1.view.getViewTreeObserver().addOnGlobalLayoutListener()</h4><p>通过View的层次观察者注册全局监听，当view的布局状态、可见性等发生变化时会触发，所以可能会被调用多次，仅用其获取view宽高时，获取到之后需要移除监听。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">textView.getViewTreeObserver().addOnGlobalLayoutListener(<span class="keyword">new</span> ViewTreeObserver.OnGlobalLayoutListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onGlobalLayout</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnGlobalLayoutListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.getViewTreeObserver().removeOnGlobalLayoutListener(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-view-post"><a href="#2-view-post" class="headerlink" title="2. view.post()"></a>2. view.post()</h4><p>Runnable 操作只有在 View 的 <strong>attachedToWindow</strong> 到 <strong>detachedFromWiondow</strong> 这期间才会被执行，所以可以通过此方法获取view的宽高。推荐使用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">textView.post(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"View post:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-view-addOnLayoutChangeListener"><a href="#3-view-addOnLayoutChangeListener" class="headerlink" title="3. view.addOnLayoutChangeListener()"></a>3. view.addOnLayoutChangeListener()</h4><p>当布局边界发生变化时，会触发此监听，所以可以通过此监听获取到view的宽高，但可能会多次触发，因此在获取到宽高之后要移除监听。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">textView.addOnLayoutChangeListener(<span class="keyword">new</span> View.OnLayoutChangeListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onLayoutChange</span><span class="params">(View v, <span class="keyword">int</span> left, <span class="keyword">int</span> top, <span class="keyword">int</span> right, <span class="keyword">int</span> bottom, <span class="keyword">int</span> oldLeft, <span class="keyword">int</span> oldTop, <span class="keyword">int</span> oldRight, <span class="keyword">int</span> oldBottom)</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnLayoutChangeListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.removeOnLayoutChangeListener(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-view-getViewTreeObserver-addOnPreDrawListener"><a href="#4-view-getViewTreeObserver-addOnPreDrawListener" class="headerlink" title="4. view.getViewTreeObserver().addOnPreDrawListener()"></a>4. view.getViewTreeObserver().addOnPreDrawListener()</h4><p>同1类似，此监听从绘制角度进行监听，可能会多次调用，所以同样，获取到宽高之后要移除监听。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">textView.getViewTreeObserver().addOnPreDrawListener(<span class="keyword">new</span> ViewTreeObserver.OnPreDrawListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onPreDraw</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnPreDrawListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.getViewTreeObserver().removeOnPreDrawListener(<span class="keyword">this</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Android常见问题</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/04/20/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-Fragment点击穿透的解决方案-md" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
