@@ -6,17 +6,22 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://gqq519.github.io">
-  <title>Tag: Android常见问题 | gqq的博客</title>
+  <title>Android基础总结系列：Android IPC 简介 | gqq的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一枚程序媛">
-<meta property="og:type" content="website">
-<meta property="og:title" content="gqq的博客">
-<meta property="og:url" content="https://gqq519.github.io/tags/Android%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/index.html">
+  <meta name="description" content="1. Android IPC 简介IPC是Inter-Process Communication 的缩写，意为进程间通讯或跨进程通信，指两个进程之间进行数据交换的过程。一个进程可以包含多个线程，最简单的情况下，一个进程可以只有一个线程，即主线程（Android的UI线程）。 IPC机制并不是Android独有的，任何一个操作系统都需要有相应的IPC机制，比如Windows上可以通过剪贴板、管道和邮">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android基础总结系列：Android IPC 简介">
+<meta property="og:url" content="https://gqq519.github.io/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/index.html">
 <meta property="og:site_name" content="gqq的博客">
-<meta property="og:description" content="一枚程序媛">
+<meta property="og:description" content="1. Android IPC 简介IPC是Inter-Process Communication 的缩写，意为进程间通讯或跨进程通信，指两个进程之间进行数据交换的过程。一个进程可以包含多个线程，最简单的情况下，一个进程可以只有一个线程，即主线程（Android的UI线程）。 IPC机制并不是Android独有的，任何一个操作系统都需要有相应的IPC机制，比如Windows上可以通过剪贴板、管道和邮">
 <meta property="og:locale" content="zh">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/08/21/baf183601559e6a210acc09822a652e0.jpg">
+<meta property="article:published_time" content="2017-08-20T14:50:41.000Z">
+<meta property="article:modified_time" content="2020-08-24T14:44:41.050Z">
 <meta property="article:author" content="gqq519">
+<meta property="article:tag" content="Android基础">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://img.bigyoung.cn:1111/images/2020/08/21/baf183601559e6a210acc09822a652e0.jpg">
   
     <link rel="alternative" href="/atom.xml" title="gqq的博客" type="application/atom+xml">
   
@@ -140,98 +145,150 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-Android基础总结系列：Android-IPC-简介" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2017" class="archive-year">2017</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/" class="archive-article-date">
-  	<time datetime="2017-07-24T13:06:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-07-24</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/">onCreate中view获取宽高的方法.md</a>
+    <h1 class="article-title" itemprop="name">
+      Android基础总结系列：Android IPC 简介
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/" class="archive-article-date">
+  	<time datetime="2017-08-20T14:50:41.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-20</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="1-Android-IPC-简介"><a href="#1-Android-IPC-简介" class="headerlink" title="1. Android IPC 简介"></a>1. Android IPC 简介</h3><p>IPC是Inter-Process Communication 的缩写，意为进程间通讯或跨进程通信，指两个进程之间进行数据交换的过程。一个进程可以包含多个线程，最简单的情况下，一个进程可以只有一个线程，即主线程（Android的UI线程）。</p>
+<p>IPC机制并不是Android独有的，任何一个操作系统都需要有相应的IPC机制，比如Windows上可以通过剪贴板、管道和邮槽等来进行进程间通信；Linux上可以通过命名管道、共享内容、信号量等来进行进行进程间通信。Android中最具特色的通信方式就是Binder，还支持Socket，通过Socket可以实现任意两个终端之间的通信，同一个设备的两个进程也可以通过Socket实现。</p>
+<p>IPC的使用场景：只有在多进程的时候才会进行进程间通信</p>
+<ul>
+<li>一个进程需要多进程模式实现，比如有些模块由于特殊原因需要运行在单独的进程中、为了加大一个应用可使用的内存所以需要通过多线程来获取多份内存空间。</li>
+<li>当前应用需要向其他应用获取数据。</li>
+</ul>
+<h3 id="2-Android的多进程模式"><a href="#2-Android的多进程模式" class="headerlink" title="2. Android的多进程模式"></a>2. Android的多进程模式</h3><p>Android 通过给四大组件指定android:process属性，即可以开启多线程。</p>
+<h4 id="2-1-开启多线程模式"><a href="#2-1-开启多线程模式" class="headerlink" title="2.1 开启多线程模式"></a>2.1 开启多线程模式</h4><p>在Android中使用多进程只有一种方法：给四大组件在AndroidManifest中指定android:process属性，value值就是指定的进程名称，无法为一个线程或类等指定其运行时所在的进程。</p>
+<p><a href="https://github.com/gqq519/ProcessDemo/blob/master/app/src/main/AndroidManifest.xml" target="_blank" rel="noopener">Demo案例：AndroidManifest</a></p>
+<p>通过shell命令查看：adb shell ps或者adb shell ps | grep com.gqq.xxx.xxx(包名) 查看运行的进程信息：</p>
+<p><a href="http://img.bigyoung.cn:1111/image/UvJ5" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/21/baf183601559e6a210acc09822a652e0.jpg" alt="baf183601559e6a210acc09822a652e0.jpg"></a></p>
+<p><strong>注意：</strong> android:process值：<code>:remote</code>指在当前进程名前加上当前包名，可以理解为相对名称，属于当前应用的私有进程，其他应用组件不可以和它跑在同一个进程中。不以<code>:</code>开头的，是一种完整的命名方式，此进程属于全局进程，其他应用通过ShareUID的方式可以和它跑在同一个进程中。</p>
+<p>Android系统会为每个应用分配一个唯一的UID，具有相同UID的应用才能共享数据，如果两个应用通过ShareUID跑在同一个线程中，需要应用有相同的ShareUID并且签名相同，跑在同一个线程，除了共享data目录、组件信息，还可以共享内存数据。相当于一个应用的两部分。</p>
+<h4 id="2-2-多进程模式的运行机制"><a href="#2-2-多进程模式的运行机制" class="headerlink" title="2.2 多进程模式的运行机制"></a>2.2 多进程模式的运行机制</h4><p>Android 为每一个应用分配一个独立的虚拟机，不同的虚拟机在内存分配上有不同的地址空间，导致在不同的虚拟机上访问同一个类的对象会产生多个副本。比如不同进程对静态变量等的修改，不会影响其他进程，那么运行在不同进程的四大组件通过内存共享数据，就会共享失败。<br>总体，多进程会带来的几方面的问题：</p>
+<ol>
+<li>静态成员和单例模式完全失效</li>
+<li>线程同步机制完全失效<br>不在一块内存，不同进程锁的不是同一个对象。</li>
+<li>SharePreference的可靠性下降<br>SharePreference的底层实现时通过读/写XML文件来实现的，并发读/写都有可能出现问题，所以不支持两个进程同时执行读写操作，否则会导致一定几率的数据丢失。</li>
+<li>Application会多次创建<br>创建一个进程会创建一个虚拟机，也就是启动一个应用，自然会创建新的Application。运行在同一个进程中的组件属于同一个虚拟机和同一个Application以及分配同一块内存。</li>
+</ol>
+<p><a href="https://github.com/gqq519/ProcessDemo/" target="_blank" rel="noopener">Demo案例</a><br>​<br>通过跨进程通信，可以实现数据交互，实现跨进程通讯的方法：</p>
+<ol>
+<li>Intent传递数据</li>
+<li>共享文件和SharePreference</li>
+<li>基于Binder的Messager和AIDL</li>
+<li>Socket</li>
+</ol>
+<h3 id="3-IPC-基本概念介绍"><a href="#3-IPC-基本概念介绍" class="headerlink" title="3. IPC 基本概念介绍"></a>3. IPC 基本概念介绍</h3><p>主要三个概念，帮助更好的理解进程间通信。</p>
+<ul>
+<li>Serializable 接口</li>
+<li>Parcelable 接口</li>
+<li>Binder</li>
+</ul>
+<p>Serializable 和 Parcelable接口可以完成对象的序列化，用于通过Intent和Binder传递数据，需要把对象持久化到存储设备上或通过网络传输给其他客户端，可需要通过Serializable完成对象的持久化。</p>
+<h4 id="3-1-Serializable-接口"><a href="#3-1-Serializable-接口" class="headerlink" title="3.1 Serializable 接口"></a>3.1 Serializable 接口</h4><p><a href="https://github.com/gqq519/ProcessDemo" target="_blank" rel="noopener">参考Demo</a></p>
+<p>Serializable是java的一个序列化的空接口，提供标准的序列化和反序列化操作，序列化的类需要实现Serializable接口及声明serialVersionUID，而serialVersionUID不是必需的，但是会影响反序列化的结果。serialVersionUID是静态成员变量，不参与序列化过程。反序列化时serialVersionUID与序列化时的serialVersionUID一致，则可以正常序列化。不指定serialVersionUID，如果反序列化时当前类发生了变化，比如增删了某些成员变量，会重新计算当前类hash值并赋与serialVersionUID，导致与序列化时的serialVersionUID不一样，会造成反序列化失败。指定serialVersionUID会在极大程度上避免反序列化的失败，但是如果类发生了结构性的变化，比如类名和成员变量的类型等，还是会反序列化失败，因为无法还原新结构的对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 序列化过程</span></span><br><span class="line">User user = <span class="keyword">new</span> User(<span class="number">1</span>, <span class="string">"gqq"</span>, <span class="keyword">false</span>);</span><br><span class="line">ObjectOutputStream out = ObjectOutputStream(<span class="keyword">new</span> FileOutputStream(file));</span><br><span class="line">out.writeObject();</span><br><span class="line">out.close();</span><br><span class="line"><span class="comment">// 反序列化过程</span></span><br><span class="line">ObjectInputStream in = ObjectInputStream(<span class="keyword">new</span> FileInputStream(file));</span><br><span class="line">User user = in.readObject();</span><br><span class="line">in.close();</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong>静态成员变量属于类不属于对象，不参与序列化；用transient关键字标记的成员变量不参与序列化。</p>
+<p>继承自Serializable的默认序列化过程是可以改变的，可以重写系统的序列化<code>writeObject()</code>和反序列化方法<code>readObject()</code>。</p>
+<h4 id="3-2-Parcelable接口"><a href="#3-2-Parcelable接口" class="headerlink" title="3.2 Parcelable接口"></a>3.2 Parcelable接口</h4><p>Parcelable 是Android提供的一种序列化接口，接口需要实现序列化、反序列化、内容描述。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">public class UserModelParcel implements Parcelable&#123;</span><br><span class="line"></span><br><span class="line">    private int userId;</span><br><span class="line">    private String userName;</span><br><span class="line">    private boolean isMale;</span><br><span class="line">    private UserParcel userParcel;</span><br><span class="line"></span><br><span class="line">	 &#x2F;&#x2F; 反序列化方法</span><br><span class="line">    protected UserModelParcel(Parcel in) &#123;</span><br><span class="line">        userId &#x3D; in.readInt();</span><br><span class="line">        userName &#x3D; in.readString();</span><br><span class="line">        isMale &#x3D; in.readByte() !&#x3D; 0;</span><br><span class="line">        userParcel &#x3D; in.readParcelable(UserParcel.class.getClassLoader());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public UserModelParcel(int userId, String userName, boolean isMale, UserParcel userParcel) &#123;</span><br><span class="line">        this.userId &#x3D; userId;</span><br><span class="line">        this.userName &#x3D; userName;</span><br><span class="line">        this.isMale &#x3D; isMale;</span><br><span class="line">        this.userParcel &#x3D; userParcel;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 序列化</span><br><span class="line">    @Override</span><br><span class="line">    public void writeToParcel(Parcel dest, int flags) &#123;</span><br><span class="line">        dest.writeInt(userId);</span><br><span class="line">        dest.writeString(userName);</span><br><span class="line">        dest.writeByte((byte) (isMale ? 1 : 0));</span><br><span class="line">        dest.writeParcelable(userParcel, flags);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 内容描述</span><br><span class="line">    @Override</span><br><span class="line">    public int describeContents() &#123;</span><br><span class="line">        return 0;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 反序列化</span><br><span class="line">    public static final Creator&lt;UserModelParcel&gt; CREATOR &#x3D; new Creator&lt;UserModelParcel&gt;() &#123;</span><br><span class="line">        @Override</span><br><span class="line">        public UserModelParcel createFromParcel(Parcel in) &#123;</span><br><span class="line">            return new UserModelParcel(in);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public UserModelParcel[] newArray(int size) &#123;</span><br><span class="line">            return new UserModelParcel[size];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>总结：</strong> Serializable 是java的序列化接口，使用简单但是开销比较大，序列化和反序列化都涉及到大量的I/O操作，效率相对较低。Parcelable是Android提供的序列化方法，更适用于Android平台，效率很高，但是使用起来比较麻烦。Parcelable主要用在内存序列化上，序列化存储设备或将序列化后的对象通过网络传输建议使用Serializable。</p>
+<p>再贴一遍<br><a href="https://github.com/gqq519/ProcessDemo" target="_blank" rel="noopener">参考 Demo</a></p>
+<h3 id="4-Binder连接池"><a href="#4-Binder连接池" class="headerlink" title="4. Binder连接池"></a>4. Binder连接池</h3><p>Binder连接池的作用是把每一个模块的Binder请求统一发送到远程Service中，避免Service重建。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Android常见问题</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/04/23/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/" class="archive-article-date">
-  	<time datetime="2017-04-23T12:29:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-04-23</time>
-</a>
+<nav id="article-nav">
+  
+    <a href="/2017/08/24/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder-AIDL%E7%9A%84%E4%BD%BF%E7%94%A8/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          Android基础总结系列：Binder AIDL的使用
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Android基础总结系列：Android 生命周期与启动模式</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/04/23/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/">Fragment点击穿透的解决方案.md</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Android常见问题</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
   
 
-    
+  
+
+  
 
 
           </div>
@@ -254,9 +311,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: false,

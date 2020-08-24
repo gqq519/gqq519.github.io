@@ -6,17 +6,24 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://gqq519.github.io">
-  <title>Tag: Android常见问题 | gqq的博客</title>
+  <title>Android基础总结系列：Android 生命周期与启动模式 | gqq的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一枚程序媛">
-<meta property="og:type" content="website">
-<meta property="og:title" content="gqq的博客">
-<meta property="og:url" content="https://gqq519.github.io/tags/Android%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/index.html">
+  <meta name="description" content="Android 生命周期与启动模式1.1 Android 生命周期生命周期分为两部分：一部分是典型(正常)的生命周期，用户参与下所经历的生命周期，比如手动启动Activity和销毁Activity。另一部分是异常情况下的生命周期，比如Activity被系统回收或设备Configuration发生变化导致的Activity被销毁重建。 1.1.1 典型情况的生命周期 说明：  第一次启动某一个Act">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android基础总结系列：Android 生命周期与启动模式">
+<meta property="og:url" content="https://gqq519.github.io/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/index.html">
 <meta property="og:site_name" content="gqq的博客">
-<meta property="og:description" content="一枚程序媛">
+<meta property="og:description" content="Android 生命周期与启动模式1.1 Android 生命周期生命周期分为两部分：一部分是典型(正常)的生命周期，用户参与下所经历的生命周期，比如手动启动Activity和销毁Activity。另一部分是异常情况下的生命周期，比如Activity被系统回收或设备Configuration发生变化导致的Activity被销毁重建。 1.1.1 典型情况的生命周期 说明：  第一次启动某一个Act">
 <meta property="og:locale" content="zh">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/04/28/ee41e7a858e6b449c0da2e86a6966178.jpg">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/08/21/befbbb0ab6093ea8466715489e70a3a5.jpg">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/08/21/b7896ac944cab3dd6ad0a92f6e6afc67.jpg">
+<meta property="article:published_time" content="2017-08-18T13:30:10.000Z">
+<meta property="article:modified_time" content="2020-08-24T14:44:35.279Z">
 <meta property="article:author" content="gqq519">
+<meta property="article:tag" content="Android基础">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://img.bigyoung.cn:1111/images/2020/04/28/ee41e7a858e6b449c0da2e86a6966178.jpg">
   
     <link rel="alternative" href="/atom.xml" title="gqq的博客" type="application/atom+xml">
   
@@ -140,98 +147,171 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-Android基础总结系列：Android-生命周期与启动模式" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2017" class="archive-year">2017</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/" class="archive-article-date">
-  	<time datetime="2017-07-24T13:06:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-07-24</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/">onCreate中view获取宽高的方法.md</a>
+    <h1 class="article-title" itemprop="name">
+      Android基础总结系列：Android 生命周期与启动模式
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/" class="archive-article-date">
+  	<time datetime="2017-08-18T13:30:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-18</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="Android-生命周期与启动模式"><a href="#Android-生命周期与启动模式" class="headerlink" title="Android 生命周期与启动模式"></a>Android 生命周期与启动模式</h1><h2 id="1-1-Android-生命周期"><a href="#1-1-Android-生命周期" class="headerlink" title="1.1 Android 生命周期"></a>1.1 Android 生命周期</h2><p>生命周期分为两部分：一部分是典型(正常)的生命周期，用户参与下所经历的生命周期，比如手动启动Activity和销毁Activity。另一部分是异常情况下的生命周期，比如Activity被系统回收或设备Configuration发生变化导致的Activity被销毁重建。</p>
+<h4 id="1-1-1-典型情况的生命周期"><a href="#1-1-1-典型情况的生命周期" class="headerlink" title="1.1.1 典型情况的生命周期"></a>1.1.1 典型情况的生命周期</h4><p><img src="http://img.bigyoung.cn:1111/images/2020/04/28/ee41e7a858e6b449c0da2e86a6966178.jpg" alt="ee41e7a858e6b449c0da2e86a6966178.jpg"></p>
+<p><strong>说明：</strong></p>
+<ol>
+<li><p>第一次启动某一个Activity回调：onCreate-&gt;onStart-&gt;onResume;</p>
+</li>
+<li><p>back键退出当前Activity回调：onPause-&gt;onStop-&gt;onDestory;</p>
+</li>
+<li><p>home键或打开新的Activity回调：onPause-&gt;onStop,如果Activity采用透明主题，则不会调用onStop。</p>
+</li>
+<li><p>再次回到原Activity回调：onRestart-&gt;onStart-&gt;onResume;</p>
+</li>
+<li><p>打开新的Activity回调：A:onPause-&gt; B:onCreate-&gt; B:onStart-&gt; B:onResume-&gt; A:onStop</p>
+<p><strong>说明：</strong>旧的Activity的onPause先调用，然后新的Activity才启动，所以在onPause中要避免做重量级操作，在官方文档中有体现：<br><a href="http://img.bigyoung.cn:1111/image/Ux79" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/21/befbbb0ab6093ea8466715489e70a3a5.jpg" alt="befbbb0ab6093ea8466715489e70a3a5.jpg"></a></p>
+</li>
+</ol>
+<h4 id="1-1-2-异常情况下的生命周期分析"><a href="#1-1-2-异常情况下的生命周期分析" class="headerlink" title="1.1.2 异常情况下的生命周期分析"></a>1.1.2 异常情况下的生命周期分析</h4><p><strong>1. 资源相关的系统配置发生改变导致Activity被杀死</strong></p>
+<p>旋转屏幕等会导致系统配置发生变化，默认情况下，Activity会被销毁并且重新创建，也可以人为的阻止系统重建。<br>在默认情况下，不对Activity做任何处理，那么系统变化后，会被销毁和重建：生命周期如下：</p>
+<p><a href="http://img.bigyoung.cn:1111/image/UD8o" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/21/b7896ac944cab3dd6ad0a92f6e6afc67.jpg" alt="b7896ac944cab3dd6ad0a92f6e6afc67.jpg"></a></p>
+<p>只有在异常情况下（在home或启动其他Activity的时候也会单独调用onSaveInstanceState），Activity会在onStop之前调用onSaveInstanceState，与onPause无特定顺序，当Activity被重新创建的时候，系统会在onStart之后调用onRestoreInstanceState,并把Activity销毁时保存的bundle数据作为参数传给onRestoreInstanceState。</p>
+<p>关于数据保存和恢复，Activity调用onSaveInstanceState保存数据－－&gt; Activity委托Window保存数据－－&gt; Window委托顶级容器(ViewGroup，可能是DecorView)保存数据－－&gt; ViewGroup通知子元素保存数据。<strong>这是一种典型的委托模式，典型的委托模式还有<code>View绘制过程</code>、<code>事件分发</code>等。</strong></p>
+<p>上面被销毁并进行了重建，那什么情况下不会被重建呢？<br>如果不想被重建，那么可以给Activity指定configChange属性：比如<code>android:configChanges=”orientation”</code>屏幕旋转的时候不会进行重建，也不会调用onSaveInstanceState和onRestoreInstanceState，而是调用<code>onConfigurationChanged</code>方法。<br>配置常见的有三种：<strong>locale、orientation、keyboardHidden</strong>。</p>
+<p><strong>2. 资源内存不足导致优先级低的Activity被杀死</strong></p>
+<p>Activity优先级从高到低：</p>
+<ol>
+<li>前台Activity－－正在与用户进行交互的Activity优先级最高。</li>
+<li>可见但非前台Activity－－弹出对话框等导致的Activity可见但无法交互。</li>
+<li>后台Activity－－已经被暂停的Activity，比如执行了onStop(切在后台)，优先级最低。</li>
+</ol>
+<h2 id="1-2-Activity的启动模式"><a href="#1-2-Activity的启动模式" class="headerlink" title="1.2 Activity的启动模式"></a>1.2 Activity的启动模式</h2><h4 id="1-2-1-Activity的LuncherMode"><a href="#1-2-1-Activity的LuncherMode" class="headerlink" title="1.2.1 Activity的LuncherMode"></a>1.2.1 Activity的LuncherMode</h4><ol>
+<li><strong>standard：</strong> 标准、默认模式，不管在栈中是否存在，都会创建Activity实例在启动它的Activity所在的栈中。需要注意：创建的实例默认会在启动它的Activity所在的栈中，那么，非Activity的Context（ApplicationContext）并不存在所谓的任务栈，所以会报错，解决方法就是为待启动Activity指定FLAG_ACTIVITY_NEW_TASK标志位，启动的时候为其创建一个任务栈，而添加了FLAG_ACTIVITY_NEW_TASK的Flag，实际就变成了以singleTask模式启动。后面会说到Flag。</li>
+<li><strong>singleTop：</strong> 栈顶复用模式，如果新的Activity在栈顶，则不会创建，同时回调onNewIntent,onCreate、onStart不会被回调，因为Activity没有创建。</li>
+<li><strong>singleTask：</strong> 栈内复用模式，单实例模式，只要Activity在一个栈中存在，那多次启动都不会创建Activity，会回调onNewIntent，同时要启动的Activity之上的Activity全部被清除出栈，如果不存在，则重新创建一个任务栈，然后创建Activity放入栈中。</li>
+<li><strong>singleInstance：</strong> 单实例模式，加强版singleTask，此模式的Activity单独位于一个任务栈中。</li>
+</ol>
+<p><a href="https://blog.csdn.net/javazejian/article/details/52072131" target="_blank" rel="noopener">TaskAffinity的运用</a></p>
+<h4 id="1-2-2-Activity的Flags"><a href="#1-2-2-Activity的Flags" class="headerlink" title="1.2.2 Activity的Flags"></a>1.2.2 Activity的Flags</h4><p>标记位一般与启动模式相关，会影响Activity的运行状态。<br>常见的几种Flags：</p>
+<ol>
+<li><strong>FLAG_ACTIVITY_NEW_TASK：</strong> 其效果等同于为Activity指定“singleTask”的启动模式。</li>
+<li><strong>FLAG_AVCTIVITY_SINGLE_TOP：</strong> 其效果等同于为Activity设置“singleTop”的启动模式。</li>
+<li><strong>FLAG_ACTIVITY_CLEAR_TOP：</strong> 清除同一任务栈中位于它上面的Activity，一般与FLAG_ACTIVITY_NEW_TASK配合使用，被启动的Activity如果已存在，那么就会调用onNewIntent方法，如果被启动的Activity使用standard模式，那它连同他之上的都要出栈，会重新创建实例，放入栈顶。</li>
+<li><strong>FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS：</strong> 具有此标记位的Activity不会出现在历史Activity列表中(Android 多任务管理器查看的时候不会显示)，等同于xml中指定Activity属性为：android:excludeFromRecents=”true”;</li>
+</ol>
+<p>官方文档：<a href="https://developer.android.com/reference/android/content/Intent.html#FLAG_ACTIVITY_CLEAR_TASK" target="_blank" rel="noopener">Intent－Flags</a></p>
+<h2 id="1-3-IntentFilter的匹配规则"><a href="#1-3-IntentFilter的匹配规则" class="headerlink" title="1.3 IntentFilter的匹配规则"></a>1.3 IntentFilter的匹配规则</h2><p>启动Activity分为两种：显式调用和隐式调用。显式调用明确指定被启动对象的组件信息，包括类名和包名。隐式调用根据过滤信息进行匹配，同时使用隐式和显式时，以显式为主。匹配的信息：action、category、data，可以有多组intent-filter,只有同时匹配一组才能启动目标Activity。</p>
+<ol>
+<li><strong>action：</strong>action的字符串完全一致才算匹配成功，区分大小写，一组intent-filter可以有多个action，匹配一个就算成功。</li>
+<li><strong>category：</strong>category是一个字符串，系统预定义了一些category，Intent可以没有category，如果有，不管几个，都必须和intent-filter过滤规则中的category匹配。不设置可以匹配是因为在startActivity或startActivityForResult的时候会默认添加“android.intent.category.DEFAULT”这个category。</li>
+<li><strong>data：</strong>data的匹配规则与action类似，data由两部分组成：mimeType和URI。mimeType指媒体类型，比如image/jepg、audio/mpeg4-generic和video/*等，可以表示图片文本视频等不同媒体类型，而URI包含的数据比较多，大致结构：</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;scheme&gt;:&#x2F;&#x2F;&lt;host&gt;:&lt;port&gt;&#x2F;[&lt;path&gt;|&lt;pathPrefix&gt;|&lt;pathPattern&gt;]</span><br></pre></td></tr></table></figure>
+
+<p>结合实例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">content:&#x2F;&#x2F;com.example.project:200&#x2F;folder&#x2F;subfolder&#x2F;etc</span><br><span class="line">http:&#x2F;&#x2F;www.baidu.com:80&#x2F;search&#x2F;info</span><br></pre></td></tr></table></figure>
+
+<p><strong>Scheme：</strong>URI的模式，比如http、file，没有指定，其他参数无效，URI无效。<br><strong>Host：</strong>URI的主机，比如<a href="http://www.baidu.com，未指定，其他参数无效，URI无效。" target="_blank" rel="noopener">www.baidu.com，未指定，其他参数无效，URI无效。</a><br><strong>Port：</strong>URI中的端口号，比如80，指定了Scheme和Host，Port才有效。<br><strong>Path、pathPattern、pathPrefix：</strong>表示路径信息，path、pathPattern表示完整路径，可以包含通配符“*”，表示0或多个任意字符，pathPrefix表示路径的前缀信息。</p>
+<p>例子：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;data android:scheme&#x3D;&quot;string&quot;</span><br><span class="line">    android:host&#x3D;&quot;string&quot;</span><br><span class="line">    android:port&#x3D;&quot;string&quot;</span><br><span class="line">    android:path&#x3D;&quot;string&quot;</span><br><span class="line">    android:pathPattern&#x3D;&quot;string&quot;</span><br><span class="line">    android:pathPrefix&#x3D;&quot;string&quot;</span><br><span class="line">    android:mimeType&#x3D;&quot;string&quot;&#x2F;&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>隐式意图注意内容：</strong></p>
+<p>通过隐式意图启动Activity的时候，可以做一下判断，看是否有 Activity匹配到隐式意图，不做判断，匹配不到可能会出现ActivityNotFoundException异常，判断的方式：<code>PackageManager的resolveActivity</code>或着<code>Intent的resolveActivity</code>,另外PackageManager提供了queryIntentActivities方法，返回值是所有匹配的Activity信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">public abstract List&lt;ResolveInfo&gt; queryIntentActivities(Intent intent,@ResolveInfoFlags int flags);</span><br><span class="line">public abstract ResolveInfo resolveActivity(Intent intent, @ResolveInfoFlags int flags);</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是，第二个参数使用<code>MATCH_DEFAULT_ONLY</code> 仅仅匹配在intent-filter中声明了android.intent.category.DEFAULT的category的Activity，意义在于，只要不返回null，那么startActivity一定会成功。</p>
+<p>还有一类action和category比较重要：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;action android:name&#x3D;&quot;android.intent.action.MAIN&quot; &#x2F;&gt;</span><br><span class="line">&lt;category android:name&#x3D;&quot;android.intent.category.LAUNCHER&quot; &#x2F;&gt;</span><br></pre></td></tr></table></figure>
+
+<p>二者共同作用，表明这是程序入口的Activity并且出现在系统应用列表中，二者缺一不可。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Android常见问题</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/04/23/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/" class="archive-article-date">
-  	<time datetime="2017-04-23T12:29:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-04-23</time>
-</a>
+<nav id="article-nav">
+  
+    <a href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          Android基础总结系列：Android IPC 简介
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">onCreate中view获取宽高的方法.md</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/04/23/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/">Fragment点击穿透的解决方案.md</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Android常见问题</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
   
 
-    
+  
+
+  
 
 
           </div>
@@ -254,9 +334,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: false,
 		toc_hide_index: false,
