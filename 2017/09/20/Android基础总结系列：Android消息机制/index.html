@@ -6,17 +6,22 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://gqq519.github.io">
-  <title>Archives: 2017/8 | gqq的博客</title>
+  <title>Android基础总结系列：Android消息机制 | gqq的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一枚程序媛">
-<meta property="og:type" content="website">
-<meta property="og:title" content="gqq的博客">
-<meta property="og:url" content="https://gqq519.github.io/archives/2017/08/index.html">
+  <meta name="description" content="Handler Handler 常见问题 Handler常见问题 说一说Android的消息机制 Handler主要用于跨线程通讯，主要涉及到的几个主要的类：  Handler：消息处理者，主要负责消息的发送(handler.enqueueMessage)和消息的处理(handleMessage)    Looper：可以理解为消息泵，不断的循环执行(Looper.loop)，主要负责消息的分发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android基础总结系列：Android消息机制">
+<meta property="og:url" content="https://gqq519.github.io/2017/09/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E6%B6%88%E6%81%AF%E6%9C%BA%E5%88%B6/index.html">
 <meta property="og:site_name" content="gqq的博客">
-<meta property="og:description" content="一枚程序媛">
+<meta property="og:description" content="Handler Handler 常见问题 Handler常见问题 说一说Android的消息机制 Handler主要用于跨线程通讯，主要涉及到的几个主要的类：  Handler：消息处理者，主要负责消息的发送(handler.enqueueMessage)和消息的处理(handleMessage)    Looper：可以理解为消息泵，不断的循环执行(Looper.loop)，主要负责消息的分发">
 <meta property="og:locale" content="zh">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/08/28/019248b51af5717206a6eb177e681a66.png">
+<meta property="article:published_time" content="2017-09-20T14:37:17.000Z">
+<meta property="article:modified_time" content="2020-09-01T15:46:01.430Z">
 <meta property="article:author" content="gqq519">
+<meta property="article:tag" content="Android基础">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://img.bigyoung.cn:1111/images/2020/08/28/019248b51af5717206a6eb177e681a66.png">
   
     <link rel="alternative" href="/atom.xml" title="gqq的博客" type="application/atom+xml">
   
@@ -134,36 +139,109 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-Android基础总结系列：Android消息机制" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android基础总结系列：Android消息机制
+    </h1>
+  
+
+        
+        <a href="/2017/09/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E6%B6%88%E6%81%AF%E6%9C%BA%E5%88%B6/" class="archive-article-date">
+  	<time datetime="2017-09-20T14:37:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-20</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="Handler"><a href="#Handler" class="headerlink" title="Handler"></a>Handler</h4><p><a href="http://img.bigyoung.cn:1111/image/U0BN" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/28/019248b51af5717206a6eb177e681a66.png" alt="019248b51af5717206a6eb177e681a66.png"></a></p>
+<p><a href="https://www.jianshu.com/p/a0608b8404a5" target="_blank" rel="noopener">Handler 常见问题</a></p>
+<h5 id="Handler常见问题"><a href="#Handler常见问题" class="headerlink" title="Handler常见问题"></a>Handler常见问题</h5><ul>
+<li>说一说Android的消息机制<ul>
+<li>Handler主要用于跨线程通讯，主要涉及到的几个主要的类：</li>
+<li><ol>
+<li>Handler：消息处理者，主要负责消息的发送(handler.enqueueMessage)和消息的处理(handleMessage)</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>Looper：可以理解为消息泵，不断的循环执行(Looper.loop)，主要负责消息的分发</li>
+</ol>
+</li>
+<li><ol start="3">
+<li>MessageQueue：消息队列，主要负责消息的管理，向消息池投递消息(MessageQueue.enqueueMessage)和取出消息池的数据(MessageQueue.next)交由target(Handler)处理</li>
+</ol>
+</li>
+<li><ol start="4">
+<li>Message：消息，信息传递的单位，主要分为硬件消息和软件创建的消息</li>
+</ol>
+</li>
+<li>总：Looper 有一个 MessageQueue 消息队列；MessageQueue 有一组待处理的 Message；Message 中有一个用于处理消息的 Handler；Handler 中有 Looper 和 MessageQueue。参考图解。</li>
+</ul>
+</li>
+<li>Handler 是如何与线程关联的？<ul>
+<li>Handler的线程关联主要通过Looper实现的，创建Handler之前需要创建Looper，而在Looper.prepare 方法中借助ThreadLocal实现了与当前线程的绑定，而Looper.loop又控制取出消息交给Handler处理</li>
+</ul>
+</li>
+<li>Handler 发出去的消息是谁管理的？<ul>
+<li>MessageQueue, handler通过send/post发送的消息，最终会调用到MessageQueue.enqueueMessage方法，并由Looper取出(Looper.loop中MessageQueue.next)交由Handler处理(Looper.loop中msg.target.dispatchMessage)</li>
+</ul>
+</li>
+<li>消息又是怎么回到 handleMessage() 方法的？<ul>
+<li>通过Looper.loop ，Looper取出(Looper.loop中MessageQueue.next)交由Handler处理(Looper.loop中msg.target.dispatchMessage)</li>
+</ul>
+</li>
+<li>线程的切换是怎么回事？<ul>
+<li>线程的转换由Looper实现，handleMessage由所在线程由Looper.loop调用者所在的线程决定的</li>
+</ul>
+</li>
+<li>一个线程可以有几个 Looper、几个 MessageQueue 和几个 Handler？<ul>
+<li>总结：一个Looper，一个MessageQueue和多个Handler</li>
+<li>Looper创建时会通过ThreadLocal关联当前的线程，Looper 类利用了 ThreadLocal 的特性，保证了每个线程只存在一个 Looper 对象，一个Looper内部创建一个MessageQueue，可以有多个Handler</li>
+</ul>
+</li>
+<li>可以在子线程创建Handler吗？需要注意什么？<ul>
+<li>可以，但是需要在创建之前创建Looper</li>
+<li>Looper.prepare()–&gt;new Handler</li>
+</ul>
+</li>
+<li>Looper 死循环为什么不会导致应用卡死，会消耗大量资源吗？<ul>
+<li><a href="https://www.zhihu.com/question/34652589" target="_blank" rel="noopener">https://www.zhihu.com/question/34652589</a></li>
+</ul>
+</li>
+<li>MessageQueue是什么数据结构？<ul>
+<li>单链表</li>
+</ul>
+</li>
+<li>handler.postDelayed() 函数延时执行计时是否准确？<ul>
+<li>不准确，当上一个任务存在耗时操作时</li>
+</ul>
+</li>
+<li>你对 IdleHandler 有多少了解?<ul>
+<li>TODO</li>
+</ul>
+</li>
+<li>HandlerThread的了解？<ul>
+<li>HandlerThread继承自Thread，是一个可以直接使用Handler的Thread，内部通过run方法已经调用了Looper.prepare和Looper.loop方法，可以直接通过HandlerThread创建Handler，由于 HandlerThread 的run方法是一个无限循环，因此当不需要使用的时候通过quit或者quitSafely方法来终止线程的执行。</li>
+</ul>
+</li>
+<li>Message的Obtain方法了解多少，怎么维护消息池？<ul>
+<li>创建Message时，通过Message.obtain或者Handler.obtainMessage方法，不建议直接new Message，因为Message内部维护了一个消息池，默认消息池大小50，obtain方法从消息池中返回一个新的Message实例，避免重新分配</li>
+</ul>
+</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2017" class="archive-year">2017</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/" class="archive-article-date">
-  	<time datetime="2017-08-29T13:30:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-29</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/">Android基础总结系列：Binder上层原理浅析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -175,133 +253,64 @@
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/24/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder-AIDL%E7%9A%84%E4%BD%BF%E7%94%A8/" class="archive-article-date">
-  	<time datetime="2017-08-24T14:32:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-24</time>
-</a>
+<nav id="article-nav">
+  
+    <a href="/2017/09/23/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AApp%E7%9A%84%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          Android基础总结系列：App的启动流程
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/09/10/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Android基础总结系列：Android四大组件</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/24/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder-AIDL%E7%9A%84%E4%BD%BF%E7%94%A8/">Android基础总结系列：Binder AIDL的使用</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/" class="archive-article-date">
-  	<time datetime="2017-08-20T14:50:41.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-20</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/">Android基础总结系列：Android IPC 简介</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/" class="archive-article-date">
-  	<time datetime="2017-08-18T13:30:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-18</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/">Android基础总结系列：Android 生命周期与启动模式</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
   
-  
-    </div></section>
-  
-
-    
 
 
           </div>
@@ -324,8 +333,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,

@@ -136,6 +136,1376 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-Android基础总结系列：Zygote进程的启动流程" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/10/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AZygote%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">Android基础总结系列：Zygote进程的启动流程</a>
+    </h1>
+  
+
+        
+        <a href="/2018/10/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AZygote%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" class="archive-article-date">
+  	<time datetime="2018-10-01T02:37:51.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-10-01</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>[TOC]</p>
+<p>参考：<a href="https://www.jianshu.com/p/ab9b83a77af6，做一下记录和总结" target="_blank" rel="noopener">https://www.jianshu.com/p/ab9b83a77af6，做一下记录和总结</a></p>
+<h4 id="Zygote进程的启动流程"><a href="#Zygote进程的启动流程" class="headerlink" title="Zygote进程的启动流程"></a>Zygote进程的启动流程</h4><p><a href="http://img.bigyoung.cn:1111/image/U5ld" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/29/4ca701085e1fa3a7a0e3ac18ca71e7a4.jpg" alt="4ca701085e1fa3a7a0e3ac18ca71e7a4.jpg"></a></p>
+<p>Zygote进程又称受精卵进程，它由app_process启动，Zygote进程最大意义是作为一个Socket的Server端，接收着四面八方的进程创建请求，Android中所有的应用进程的创建都是一个应用进程通过Binder请求SystemServer进程，SystemServer进程发送socket消息给Zygote进程，统一由Zygote进程创建出来的。典型的C/S架构！！！。图中绿色标注为Binder通信方式，红色标注为Socket通信方式。</p>
+<p>话说为什么Android系统采用这种架构呢，为什么所有进程的创建都是由Zygote来做呢？原因有如下几点</p>
+<ul>
+<li>Zygote进程在启动的时候会创建一个虚拟机实例，因此通过Zygote进程在父进程，创建的子进程都会继承这个虚拟机实例，App中的JAVA代码可以得到翻译执行。</li>
+<li>进程与进程之间需要跨进程通信，由Zygote进程作为父进程还可以获得一个Binder线程池，这样进程之间就可以使用Binder进行跨进程通信了。</li>
+<li>进程的“血液”可以理解成Message，启动四大组件靠的都是Looper消息机制，看过老罗的书，说由Zygote进程作为父进程，子进程可以获得一个消息循环。这句话我表示不理解，因为各个应用进程的Looper循环是自己在ActivityThread中创建的，SystemServer进程的消息循环也是自己创建的，那为什么说子进程可以继承Zygote进程的消息循环呢？这点我觉得不严谨，欢迎讨论。</li>
+</ul>
+<p>所以这可以理解成Zygote进程作为所有应用进程的父进程的原因。</p>
+<h4 id="Java-源码启动分析"><a href="#Java-源码启动分析" class="headerlink" title="Java 源码启动分析"></a>Java 源码启动分析</h4><p><img src="http://img.bigyoung.cn:1111/images/2020/08/30/1cf030348e51c975c321804f325fac85.png" alt="1cf030348e51c975c321804f325fac85.png"></p>
+<p>结合代码看：（ZygoteInit像是一个模版代码，其他的比如WebViewZygoteInit都是类似）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String argv[])</span> </span>&#123;</span><br><span class="line">   <span class="comment">//1、创建ZygoteServer</span></span><br><span class="line">    ZygoteServer zygoteServer = <span class="keyword">new</span> ZygoteServer();</span><br><span class="line">  .......</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">         .......</span><br><span class="line">        <span class="keyword">boolean</span> startSystemServer = <span class="keyword">false</span>;</span><br><span class="line">        String socketName = <span class="string">"zygote"</span>;</span><br><span class="line">        String abiList = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">boolean</span> enableLazyPreload = <span class="keyword">false</span>;</span><br><span class="line">       <span class="comment">// 2、解析app_main.cpp传来的参数</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; argv.length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="string">"start-system-server"</span>.equals(argv[i])) &#123;</span><br><span class="line">                startSystemServer = <span class="keyword">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">"--enable-lazy-preload"</span>.equals(argv[i])) &#123;</span><br><span class="line">                enableLazyPreload = <span class="keyword">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (argv[i].startsWith(ABI_LIST_ARG)) &#123;</span><br><span class="line">                abiList = argv[i].substring(ABI_LIST_ARG.length());</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (argv[i].startsWith(SOCKET_NAME_ARG)) &#123;</span><br><span class="line">                socketName = argv[i].substring(SOCKET_NAME_ARG.length());</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"Unknown command line argument: "</span> + argv[i]);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (abiList == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"No ABI list supplied."</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//3、创建一个Server端的Socket</span></span><br><span class="line">        zygoteServer.registerServerSocket(socketName);</span><br><span class="line">        <span class="comment">// In some configurations, we avoid preloading resources and classes eagerly.</span></span><br><span class="line">        <span class="comment">// In such cases, we will preload things prior to our first fork.</span></span><br><span class="line">        <span class="keyword">if</span> (!enableLazyPreload) &#123;</span><br><span class="line">            bootTimingsTraceLog.traceBegin(<span class="string">"ZygotePreload"</span>);</span><br><span class="line">            EventLog.writeEvent(LOG_BOOT_PROGRESS_PRELOAD_START,</span><br><span class="line">                SystemClock.uptimeMillis());</span><br><span class="line">           <span class="comment">//4、加载进程的资源和类</span></span><br><span class="line">            preload(bootTimingsTraceLog);</span><br><span class="line">            EventLog.writeEvent(LOG_BOOT_PROGRESS_PRELOAD_END,</span><br><span class="line">                SystemClock.uptimeMillis());</span><br><span class="line">            bootTimingsTraceLog.traceEnd(); <span class="comment">// ZygotePreload</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Zygote.resetNicePriority();</span><br><span class="line">        &#125;</span><br><span class="line">          ........</span><br><span class="line">        <span class="keyword">if</span> (startSystemServer) &#123;</span><br><span class="line">            <span class="comment">//5、开启SystemServer进程，这是受精卵进程的第一次分裂</span></span><br><span class="line">            startSystemServer(abiList, socketName, zygoteServer);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Log.i(TAG, <span class="string">"Accepting command socket connections"</span>);</span><br><span class="line">       <span class="comment">//6、启动一个死循环监听来自Client端的消息</span></span><br><span class="line">        zygoteServer.runSelectLoop(abiList);</span><br><span class="line">       <span class="comment">//7、关闭SystemServer的Socket</span></span><br><span class="line">        zygoteServer.closeServerSocket();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Zygote.MethodAndArgsCaller caller) &#123;</span><br><span class="line">       <span class="comment">//8、这里捕获这个异常调用MethodAndArgsCaller的run方法。</span></span><br><span class="line">        caller.run();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable ex) &#123;</span><br><span class="line">        Log.e(TAG, <span class="string">"System zygote died with exception"</span>, ex);</span><br><span class="line">        zygoteServer.closeServerSocket();</span><br><span class="line">        <span class="keyword">throw</span> ex;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ZygoteInit的main方法大概就做了上面六件事情:</p>
+<ol>
+<li>创建ZygoteServer，在Android O上把与Socket的操作都封装到了ZygoteServer类中；</li>
+<li>解析app_main.cpp传来的参数。</li>
+<li>创建一个Server端的Socket，作用是当Zygote进程将SystemServer进程启动后，就会在这个Socket上来等待ActivityManagerService请求，即请求创建我们自己APP应用程序进程；</li>
+<li>预加载类和资源，包括颜色啊，R文件，drawable、类等；</li>
+<li>启动system_server进程，这是上层framework的运行载体，ActivityManagerService就是运行在这个进程里面的；</li>
+<li>开启一个循环，等待着接收ActivityManagerService的请求，随时待命，当接收到创建新进程的请求时立即唤醒并执行相应工作；</li>
+</ol>
+<p>我觉得这段代码的主线是，<strong>ZygoteInit进程启动后，会注册一个Socket，在runSelectLoop方法中开启一个while死循环等待ActivityManagerService创建新进程的请求，其次，ZygoteInit启动了SystemServer进程，执行SystemServer的main方法。</strong> </p>
+<h4 id="Zygote进程的几个问题"><a href="#Zygote进程的几个问题" class="headerlink" title="Zygote进程的几个问题"></a>Zygote进程的几个问题</h4><h5 id="1、ZygoteInit方法是怎么调用的？"><a href="#1、ZygoteInit方法是怎么调用的？" class="headerlink" title="1、ZygoteInit方法是怎么调用的？"></a>1、ZygoteInit方法是怎么调用的？</h5><p>Zygote进程被init初始化的时候，会调用app_main.cpp 的main函数，app_main.cpp是Zygote进程的主文件。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">/frameworks/base/cmds/app_process/app_main.cpp</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* <span class="keyword">const</span> argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ......</span><br><span class="line">      <span class="comment">//init.rc中会配置一些参数，这里进行比较设置一些变量走进不同的分支</span></span><br><span class="line">    <span class="keyword">while</span> (i &lt; argc) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">char</span>* arg = argv[i++];</span><br><span class="line">        <span class="keyword">if</span> (strcmp(arg, <span class="string">"--zygote"</span>) == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">//启动的是Zygote进程</span></span><br><span class="line">            zygote = <span class="keyword">true</span>;</span><br><span class="line">            niceName = ZYGOTE_NICE_NAME;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (strcmp(arg, <span class="string">"--start-system-server"</span>) == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">//启动的是system-server进程</span></span><br><span class="line">            startSystemServer = <span class="keyword">true</span>;</span><br><span class="line">        &#125; </span><br><span class="line">      ......</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">        .......</span><br><span class="line">    <span class="comment">//设置一个“好听的名字” zygote，之前的名称是app_process</span></span><br><span class="line">    <span class="keyword">if</span> (!niceName.isEmpty()) &#123;</span><br><span class="line">        runtime.setArgv0(niceName.string(), <span class="keyword">true</span> <span class="comment">/* setProcName */</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (zygote) &#123;</span><br><span class="line">          <span class="comment">//最终通过runtime启动zygote</span></span><br><span class="line">        runtime.start(<span class="string">"com.android.internal.os.ZygoteInit"</span>, args, zygote);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (className) &#123;</span><br><span class="line">        runtime.start(<span class="string">"com.android.internal.os.RuntimeInit"</span>, args, zygote);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后简单看一下Runtime的start方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Start the Android runtime.  This involves starting the virtual machine</span></span><br><span class="line"><span class="comment"> * and calling the "static void main(String[] args)" method in the class</span></span><br><span class="line"><span class="comment"> * named by "className".</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Passes the main function two arguments, the class name and the specified</span></span><br><span class="line"><span class="comment"> * options string.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">void</span> AndroidRuntime::start(<span class="keyword">const</span> <span class="keyword">char</span>* className, <span class="keyword">const</span> Vector&lt;String8&gt;&amp; options, bool zygote)</span><br><span class="line">&#123;</span><br><span class="line">  	<span class="comment">// 注意：这个是进入Zygote进程的重要依据，开机的时候一般都会打印这一行Log ！！！！！</span></span><br><span class="line">    ALOGD(<span class="string">"&gt;&gt;&gt;&gt;&gt;&gt; START %s uid %d &lt;&lt;&lt;&lt;&lt;&lt;\n"</span>,</span><br><span class="line">            className != NULL ? className : <span class="string">"(unknown)"</span>, getuid());</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* start the virtual machine */</span></span><br><span class="line">    JniInvocation jni_invocation;</span><br><span class="line">    jni_invocation.Init(NULL);</span><br><span class="line">    JNIEnv* env;</span><br><span class="line">  </span><br><span class="line">  	<span class="comment">// 1. 开启虚拟机</span></span><br><span class="line">    <span class="keyword">if</span> (startVm(&amp;mJavaVM, &amp;env, zygote) != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    onVmCreated(env);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 通过startReg注册JNI方法</span></span><br><span class="line">    <span class="keyword">if</span> (startReg(env) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        ALOGE(<span class="string">"Unable to register all android natives\n"</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 通过JNI方法启动Zygote，并传递参数</span></span><br><span class="line">    jclass stringClass;</span><br><span class="line">    jobjectArray strArray;</span><br><span class="line">    jstring classNameStr;</span><br><span class="line"></span><br><span class="line">    stringClass = env-&gt;FindClass(<span class="string">"java/lang/String"</span>);</span><br><span class="line">    <span class="keyword">assert</span>(stringClass != NULL);</span><br><span class="line">    strArray = env-&gt;NewObjectArray(options.size() + <span class="number">1</span>, stringClass, NULL);</span><br><span class="line">    <span class="keyword">assert</span>(strArray != NULL);</span><br><span class="line">    classNameStr = env-&gt;NewStringUTF(className);</span><br><span class="line">    <span class="keyword">assert</span>(classNameStr != NULL);</span><br><span class="line">    env-&gt;SetObjectArrayElement(strArray, <span class="number">0</span>, classNameStr);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; options.size(); ++i) &#123;</span><br><span class="line">        jstring optionsStr = env-&gt;NewStringUTF(options.itemAt(i).string());</span><br><span class="line">        <span class="keyword">assert</span>(optionsStr != NULL);</span><br><span class="line">        env-&gt;SetObjectArrayElement(strArray, i + <span class="number">1</span>, optionsStr);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * Start VM.  This thread becomes the main thread of the VM, and will</span></span><br><span class="line"><span class="comment">     * not return until the VM exits.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">char</span>* slashClassName = toSlashClassName(className);</span><br><span class="line">    jclass startClass = env-&gt;FindClass(slashClassName);</span><br><span class="line">    <span class="keyword">if</span> (startClass == NULL) &#123;</span><br><span class="line">        ALOGE(<span class="string">"JavaVM unable to locate class '%s'\n"</span>, slashClassName);</span><br><span class="line">        <span class="comment">/* keep going */</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        jmethodID startMeth = env-&gt;GetStaticMethodID(startClass, <span class="string">"main"</span>,</span><br><span class="line">            <span class="string">"([Ljava/lang/String;)V"</span>);</span><br><span class="line">        <span class="keyword">if</span> (startMeth == NULL) &#123;</span><br><span class="line">            ALOGE(<span class="string">"JavaVM unable to find main() in '%s'\n"</span>, className);</span><br><span class="line">            <span class="comment">/* keep going */</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            env-&gt;CallStaticVoidMethod(startClass, startMeth, strArray);</span><br><span class="line"></span><br><span class="line">#if 0</span><br><span class="line">            <span class="keyword">if</span> (env-&gt;ExceptionCheck())</span><br><span class="line">                threadExitUncaughtException(env);</span><br><span class="line">#endif</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    free(slashClassName);</span><br><span class="line">  <span class="comment">//这行Log比较常见，因为其他应用进程也是由zygote 进程fork 出来的，所有其他进程也包含这段代码，如果其他进程在java 层crash，那么也会走到这里</span></span><br><span class="line">    ALOGD(<span class="string">"Shutting down VM\n"</span>);</span><br><span class="line">    <span class="keyword">if</span> (mJavaVM-&gt;DetachCurrentThread() != JNI_OK)</span><br><span class="line">        ALOGW(<span class="string">"Warning: unable to detach main thread\n"</span>);</span><br><span class="line">    <span class="keyword">if</span> (mJavaVM-&gt;DestroyJavaVM() != <span class="number">0</span>)</span><br><span class="line">        ALOGW(<span class="string">"Warning: VM did not shut down cleanly\n"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>总结：Runtime.start 一共做了三件事情：</p>
+<ol>
+<li>调用startVm开启虚拟机，</li>
+<li>调用startReg注册JNI方法，</li>
+<li>使用JNI把Zygote进程启动起来。</li>
+</ol>
+<h5 id="2、Socket是怎么注册的？Socket通信的原理是否还记得？"><a href="#2、Socket是怎么注册的？Socket通信的原理是否还记得？" class="headerlink" title="2、Socket是怎么注册的？Socket通信的原理是否还记得？"></a>2、Socket是怎么注册的？Socket通信的原理是否还记得？</h5><p>Socket原理：LocalSocket就是作为客户端建立于服务端的连接，发送数据。LocalServerSocket作为服务端使用，建立服务端的socket监听客户端请求。典型的C/S架构！</p>
+<p>对于这种C/S架构，通常服务端会有个死循环不断响应客户端发送来的请求。</p>
+<p>Socket是如何创建的呢？通过RegisterServerSocket，具体的呢：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">frameworks/base/core/java/com/android/internal/os/ZygoteServer.java</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String ANDROID_SOCKET_PREFIX = <span class="string">"ANDROID_SOCKET_"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> LocalServerSocket mServerSocket;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Registers a server socket for zygote command connections</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> RuntimeException when open fails</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">registerServerSocket</span><span class="params">(String socketName)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//看起来是用了一个单例</span></span><br><span class="line">    <span class="keyword">if</span> (mServerSocket == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> fileDesc;</span><br><span class="line">        <span class="keyword">final</span> String fullSocketName = ANDROID_SOCKET_PREFIX + socketName;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//从环境变量中获取名为ANDROID_SOCKET_zygote的fd</span></span><br><span class="line">            String env = System.getenv(fullSocketName);</span><br><span class="line">            fileDesc = Integer.parseInt(env);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException ex) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(fullSocketName + <span class="string">" unset or invalid"</span>, ex);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//构建JAVA中的FD对象</span></span><br><span class="line">            FileDescriptor fd = <span class="keyword">new</span> FileDescriptor();</span><br><span class="line">            fd.setInt$(fileDesc);</span><br><span class="line">           <span class="comment">//用上面的FD创建LocalServerSocket</span></span><br><span class="line">            mServerSocket = <span class="keyword">new</span> LocalServerSocket(fd);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(</span><br><span class="line">                    <span class="string">"Error binding to local socket '"</span> + fileDesc + <span class="string">"'"</span>, ex);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据从环境变量中取到的一个fd创建Socket，首先，Socket的监听方式为使用Linux系统调用select()函数监听Socket文件描述符，当该文件描述符上有数据时，自动触发中断，在中断处理函数中去读取文件描述符中的数据。那fd是什么时候进行数据输入的呢？<strong>通过init进程：内核启动完成之后会去读取init.rc文件，启动开机需要启动的进程。</strong>创建一个Socket，并写入部分信息：包括创建Socket fd及写入到环境变量，方便其他进程进行获取。</p>
+<p><strong>总结：</strong>init进程中add环境变量，Zygote进程中get环境变量。</p>
+<h5 id="3、SystemServer进程资源如何加载？"><a href="#3、SystemServer进程资源如何加载？" class="headerlink" title="3、SystemServer进程资源如何加载？"></a>3、SystemServer进程资源如何加载？</h5><ul>
+<li><p>何为预加载？<br>android系统资源加载分两种方式，预加载和使用进程中加载。 预加载是指在zygote进程启动的时候就加载，这样系统只在zygote执行一次加载操作，所有APP用到该资源不需要再重新加载，减少资源加载时间，加快了应用启动速度，一般情况下，系统中App共享的资源会被列为预加载资源。</p>
+</li>
+<li><p>预加载是什么原理？<br>预加载的原理很简单，就是在zygote进程启动后将资源读取出来，保存到Resources一个全局静态变量中，下次读取系统资源的时候优先从静态变量中查找。主要代码在zygoteInit.java类中方法preloadResources(),主要代码如下：</p>
+</li>
+<li><p>系统哪些资源被预加载了？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">/frameworks/base/core/java/com/android/internal/os/ZygoteInit.java</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">preload</span><span class="params">(BootTimingsTraceLog bootTimingsTraceLog)</span> </span>&#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"begin preload"</span>);</span><br><span class="line">        bootTimingsTraceLog.traceBegin(<span class="string">"BeginIcuCachePinning"</span>);</span><br><span class="line">        beginIcuCachePinning();</span><br><span class="line">        bootTimingsTraceLog.traceEnd(); <span class="comment">// BeginIcuCachePinning</span></span><br><span class="line">        bootTimingsTraceLog.traceBegin(<span class="string">"PreloadClasses"</span>);</span><br><span class="line">        preloadClasses();</span><br><span class="line">        bootTimingsTraceLog.traceEnd(); <span class="comment">// PreloadClasses</span></span><br><span class="line">        bootTimingsTraceLog.traceBegin(<span class="string">"PreloadResources"</span>);</span><br><span class="line">        preloadResources();</span><br><span class="line">        bootTimingsTraceLog.traceEnd(); <span class="comment">// PreloadResources</span></span><br><span class="line">        Trace.traceBegin(Trace.TRACE_TAG_DALVIK, <span class="string">"PreloadOpenGL"</span>);</span><br><span class="line">        preloadOpenGL();</span><br><span class="line">        Trace.traceEnd(Trace.TRACE_TAG_DALVIK);</span><br><span class="line">        preloadSharedLibraries();</span><br><span class="line">        preloadTextResources();</span><br><span class="line">        <span class="comment">// Ask the WebViewFactory to do any initialization that must run in the zygote process,</span></span><br><span class="line">        <span class="comment">// for memory sharing purposes.</span></span><br><span class="line">        WebViewFactory.prepareWebViewInZygote();</span><br><span class="line">        endIcuCachePinning();</span><br><span class="line">        warmUpJcaProviders();</span><br><span class="line">        Log.d(TAG, <span class="string">"end preload"</span>);</span><br><span class="line"></span><br><span class="line">        sPreloadComplete = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+</li>
+</ul>
+<h5 id="4、为什么Zygote进程与子进程通讯用Socket而不用Bindler"><a href="#4、为什么Zygote进程与子进程通讯用Socket而不用Bindler" class="headerlink" title="4、为什么Zygote进程与子进程通讯用Socket而不用Bindler"></a>4、为什么Zygote进程与子进程通讯用Socket而不用Bindler</h5><p>​    - TODO</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/10/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AZygote%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android基础总结系列：App的启动流程" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/23/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AApp%E7%9A%84%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">Android基础总结系列：App的启动流程</a>
+    </h1>
+  
+
+        
+        <a href="/2017/09/23/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AApp%E7%9A%84%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" class="archive-article-date">
+  	<time datetime="2017-09-23T12:37:33.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-23</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h5 id="App的启动流程"><a href="#App的启动流程" class="headerlink" title="App的启动流程"></a>App的启动流程</h5><h5 id="Zygote-进程"><a href="#Zygote-进程" class="headerlink" title="Zygote 进程"></a>Zygote 进程</h5><p>Zygote 进程是整个Android系统的根进程，包括SystemServer进程和所有应用进程在内都是通过Zygote进程 fork 出来的。Zygote进程则是通过Linux系统init进程启动。</p>
+<ul>
+<li>启动顺序：Linux系统的init进程–&gt;Zygote进程–&gt;SystemServer进程–&gt;Application进程</li>
+<li>init进程：Linux加载完成之后会启动init进程，init进程会启动ServerManager，孵化一些守护进程，并解析init.rc孵化Zygote进程。</li>
+<li>Zygote进程：所有的App的进程都是Zygote进程fork出来的，包括SystemServer进程，Zygote初始化之后会注册一个等到接收消息的Socket，通过Socket进行IPC通讯。</li>
+</ul>
+<p><strong>App大致的启动流程：</strong></p>
+<ul>
+<li><ol>
+<li>Launcher通过Binder进程间通讯机制(IPC)通知AMS启动一个Activity</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>AMS通过Binder通知Launcher进入Paused状态</li>
+</ol>
+</li>
+<li><ol start="3">
+<li>Launcher通过Binder通知AMS已准备就绪进入Paused状态，然后AMS会利用Zygote.fork()创建一个新的进程，用于启动一个ActivityThread实例，即将启动的Activity就是在这个ActivityThread实例中进行的。</li>
+</ol>
+</li>
+<li><ol start="4">
+<li>ActivityThread通过Binder将一个ApplicationThread类型Binder对象传递给AMS，以便于AMS能够通过Binder对象和他进行通讯。</li>
+</ol>
+</li>
+<li><ol start="5">
+<li>AMS通过Binder进程间通讯通知ActivityThread，可以真正启动Activity了。</li>
+</ol>
+</li>
+</ul>
+<h4 id="Activity的启动流程"><a href="#Activity的启动流程" class="headerlink" title="Activity的启动流程"></a>Activity的启动流程</h4><p><a href="https://blog.csdn.net/u012267215/article/details/91406211" target="_blank" rel="noopener">https://blog.csdn.net/u012267215/article/details/91406211</a></p>
+<ul>
+<li>Launcher通知AMS要启动新的Activity（在Launcher所在的进程执行）<ul>
+<li>Instrumentation工具类代为启动，最终调用到AMS的startActivity</li>
+</ul>
+</li>
+<li>AMS先校验一下Activity的正确性，如果正确的话，会暂存一下Activity的信息。然后，AMS会通知Launcher程序pause Activity（在AMS所在进程执行）<ul>
+<li>ActivityStackSupervisor.startActivityLocked ：检查有没有在AndroidManifest中注册</li>
+<li>ActivityStack.startActivityLocked ：判断是否需要创建一个新的任务来启动Activity。</li>
+<li>ActivityStack.resumeTopActivityLocked ：获取栈顶的activity，并通知Launcher应该pause掉这个Activity以便启动新的activity。</li>
+</ul>
+</li>
+<li>pause Launcher的Activity，并通知AMS已经paused（在Launcher所在进程执行）<ul>
+<li>主要通过ActivityThread的消息传递</li>
+</ul>
+</li>
+<li>检查activity所在进程是否存在，如果存在，就直接通知这个进程，在该进程中启动Activity；不存在的话，会调用Process.start创建一个新进程（执行在AMS进程）<ul>
+<li>Process.start //在这里创建了新进程，新的进程会导入ActivityThread类，并执行它的main函数</li>
+</ul>
+</li>
+<li>创建ActivityThread实例，执行一些初始化操作，并绑定Application。如果Application不存在，会调用LoadedApk.makeApplication创建一个新的Application对象。之后进入Loop循环。（执行在新创建的app进程）</li>
+<li>处理新的应用进程发出的创建进程完成的通信请求，并通知新应用程序进程启动目标Activity组件（执行在AMS进程）<ul>
+<li>ActivityManagerService.attachApplication //AMS绑定本地ApplicationThread对象，后续通过ApplicationThreadProxy来通信。</li>
+<li>ActivityStack.realStartActivityLocked //真正要启动Activity了！</li>
+</ul>
+</li>
+<li>加载启动的Activity类，调用onCreate声明周期方法（执行在新启动的app进程）<ul>
+<li>Instrumentation.newActivity //调用Instrumentation类来新建一个Activity对象，利用classLoder反射的方式</li>
+</ul>
+</li>
+</ul>
+<p><strong>几个主要的类：</strong></p>
+<ul>
+<li>ActivityStack：Activity在AMS的栈管理类，用于记录已经启动的Activity的先后关系和状态信息，通过ActivityStack决定是否启动新的进程。</li>
+<li>ActivityThread：ActivityThread 运行在UI线程（主线程），App的真正入口。</li>
+<li>ApplicationThread：用来实现AMS和ActivityThread之间的交互。</li>
+</ul>
+<h4 id="Activity的启动模式"><a href="#Activity的启动模式" class="headerlink" title="Activity的启动模式"></a>Activity的启动模式</h4><ul>
+<li>Standard：Task栈中不管是否存在都会在栈顶创建新的实例</li>
+<li>SingleTop：Task栈中栈顶是要启动的Activity则不会创建，如果不是则创建</li>
+<li>SingleTask：Task栈中存在要启动的Activity，则直接调用，并移除它之上的Activity实例</li>
+<li>SingleInstance：Task栈中只有一个activity实例</li>
+</ul>
+<p><strong>常见几个Flags：</strong></p>
+<ul>
+<li>FLAG_ACTIVITY_NEW_TASK：将Activity放入一个新启动的Task</li>
+<li>FLAG_ACTIVITY_CLEAR_TASK：启动Activity时，将目标Activity关联的Task清除，再启动新Task，将该Activity放入该Task。该flags跟FLAG_ACTIVITY_NEW_TASK配合使用。</li>
+<li>FLAG_ACTIVITY_CLEAR_TOP：启动非栈顶Activity时，先清除该Activity之上的Activity。类似于SingleTop</li>
+</ul>
+<p>设置FLAG_ACTIVITY_NEW_TASK的几种情况：</p>
+<ul>
+<li>调用者不是Activity context</li>
+<li>调用者是single instance</li>
+<li>目标Activity带有singleInstance或SingleTask</li>
+<li>调用者处于finishing状态</li>
+</ul>
+<h4 id="面试题："><a href="#面试题：" class="headerlink" title="面试题："></a>面试题：</h4><ul>
+<li>一个app可以开启多个进程嘛，怎么做呢，每个进程都是在独立的虚拟机上嘛<ul>
+<li>可以开启多个进程，AndroidManifest.xml中的配置 android:process就可以实现</li>
+<li>每个进程都是独立的</li>
+<li>多进程可能存在的问题：比如Application内每个进程都会走到，可以根据进程分别进行初始化操作</li>
+</ul>
+</li>
+<li>activity和service的通信方式<ul>
+<li>通过Binder对象：通过bindService的方式实现的时候，定义一个Binder实例，用于数据传输</li>
+<li>通过Intent方式：</li>
+<li>通过广播</li>
+</ul>
+</li>
+<li>谈谈Activity的四种启动模式，SingleTop和SingleTask启动模式的应用场</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/09/23/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AApp%E7%9A%84%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android基础总结系列：Android消息机制" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E6%B6%88%E6%81%AF%E6%9C%BA%E5%88%B6/">Android基础总结系列：Android消息机制</a>
+    </h1>
+  
+
+        
+        <a href="/2017/09/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E6%B6%88%E6%81%AF%E6%9C%BA%E5%88%B6/" class="archive-article-date">
+  	<time datetime="2017-09-20T14:37:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-20</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="Handler"><a href="#Handler" class="headerlink" title="Handler"></a>Handler</h4><p><a href="http://img.bigyoung.cn:1111/image/U0BN" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/28/019248b51af5717206a6eb177e681a66.png" alt="019248b51af5717206a6eb177e681a66.png"></a></p>
+<p><a href="https://www.jianshu.com/p/a0608b8404a5" target="_blank" rel="noopener">Handler 常见问题</a></p>
+<h5 id="Handler常见问题"><a href="#Handler常见问题" class="headerlink" title="Handler常见问题"></a>Handler常见问题</h5><ul>
+<li>说一说Android的消息机制<ul>
+<li>Handler主要用于跨线程通讯，主要涉及到的几个主要的类：</li>
+<li><ol>
+<li>Handler：消息处理者，主要负责消息的发送(handler.enqueueMessage)和消息的处理(handleMessage)</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>Looper：可以理解为消息泵，不断的循环执行(Looper.loop)，主要负责消息的分发</li>
+</ol>
+</li>
+<li><ol start="3">
+<li>MessageQueue：消息队列，主要负责消息的管理，向消息池投递消息(MessageQueue.enqueueMessage)和取出消息池的数据(MessageQueue.next)交由target(Handler)处理</li>
+</ol>
+</li>
+<li><ol start="4">
+<li>Message：消息，信息传递的单位，主要分为硬件消息和软件创建的消息</li>
+</ol>
+</li>
+<li>总：Looper 有一个 MessageQueue 消息队列；MessageQueue 有一组待处理的 Message；Message 中有一个用于处理消息的 Handler；Handler 中有 Looper 和 MessageQueue。参考图解。</li>
+</ul>
+</li>
+<li>Handler 是如何与线程关联的？<ul>
+<li>Handler的线程关联主要通过Looper实现的，创建Handler之前需要创建Looper，而在Looper.prepare 方法中借助ThreadLocal实现了与当前线程的绑定，而Looper.loop又控制取出消息交给Handler处理</li>
+</ul>
+</li>
+<li>Handler 发出去的消息是谁管理的？<ul>
+<li>MessageQueue, handler通过send/post发送的消息，最终会调用到MessageQueue.enqueueMessage方法，并由Looper取出(Looper.loop中MessageQueue.next)交由Handler处理(Looper.loop中msg.target.dispatchMessage)</li>
+</ul>
+</li>
+<li>消息又是怎么回到 handleMessage() 方法的？<ul>
+<li>通过Looper.loop ，Looper取出(Looper.loop中MessageQueue.next)交由Handler处理(Looper.loop中msg.target.dispatchMessage)</li>
+</ul>
+</li>
+<li>线程的切换是怎么回事？<ul>
+<li>线程的转换由Looper实现，handleMessage由所在线程由Looper.loop调用者所在的线程决定的</li>
+</ul>
+</li>
+<li>一个线程可以有几个 Looper、几个 MessageQueue 和几个 Handler？<ul>
+<li>总结：一个Looper，一个MessageQueue和多个Handler</li>
+<li>Looper创建时会通过ThreadLocal关联当前的线程，Looper 类利用了 ThreadLocal 的特性，保证了每个线程只存在一个 Looper 对象，一个Looper内部创建一个MessageQueue，可以有多个Handler</li>
+</ul>
+</li>
+<li>可以在子线程创建Handler吗？需要注意什么？<ul>
+<li>可以，但是需要在创建之前创建Looper</li>
+<li>Looper.prepare()–&gt;new Handler</li>
+</ul>
+</li>
+<li>Looper 死循环为什么不会导致应用卡死，会消耗大量资源吗？<ul>
+<li><a href="https://www.zhihu.com/question/34652589" target="_blank" rel="noopener">https://www.zhihu.com/question/34652589</a></li>
+</ul>
+</li>
+<li>MessageQueue是什么数据结构？<ul>
+<li>单链表</li>
+</ul>
+</li>
+<li>handler.postDelayed() 函数延时执行计时是否准确？<ul>
+<li>不准确，当上一个任务存在耗时操作时</li>
+</ul>
+</li>
+<li>你对 IdleHandler 有多少了解?<ul>
+<li>TODO</li>
+</ul>
+</li>
+<li>HandlerThread的了解？<ul>
+<li>HandlerThread继承自Thread，是一个可以直接使用Handler的Thread，内部通过run方法已经调用了Looper.prepare和Looper.loop方法，可以直接通过HandlerThread创建Handler，由于 HandlerThread 的run方法是一个无限循环，因此当不需要使用的时候通过quit或者quitSafely方法来终止线程的执行。</li>
+</ul>
+</li>
+<li>Message的Obtain方法了解多少，怎么维护消息池？<ul>
+<li>创建Message时，通过Message.obtain或者Handler.obtainMessage方法，不建议直接new Message，因为Message内部维护了一个消息池，默认消息池大小50，obtain方法从消息池中返回一个新的Message实例，避免重新分配</li>
+</ul>
+</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/09/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E6%B6%88%E6%81%AF%E6%9C%BA%E5%88%B6/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android基础总结系列：Android四大组件" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/10/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6/">Android基础总结系列：Android四大组件</a>
+    </h1>
+  
+
+        
+        <a href="/2017/09/10/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6/" class="archive-article-date">
+  	<time datetime="2017-09-10T12:37:04.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-10</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="四大组件：Service"><a href="#四大组件：Service" class="headerlink" title="四大组件：Service"></a>四大组件：Service</h3><p>Service有两种启动方式：StartService和bindService</p>
+<ul>
+<li>StartService<ul>
+<li>定义一个类继承service</li>
+<li>在manifest.xml文件中配置该service</li>
+<li>使用context的startService(intent)启动该service</li>
+<li>不再使用时,调用stopService(Intent)或者stopSelf停止该服务</li>
+</ul>
+</li>
+<li>bindService<ul>
+<li>创建bindService服务段,继承自service并在类中,创建一个实现binder接口的实例对象并提供公共方法给客户端调用</li>
+<li>从onbind()回调方法返回此binder实例</li>
+<li>在客户端中,从onserviceconnected()回调方法接收binder,并使用提供的方法调用绑定服务</li>
+</ul>
+</li>
+</ul>
+<h4 id="Service的常见问题："><a href="#Service的常见问题：" class="headerlink" title="Service的常见问题："></a>Service的常见问题：</h4><p><strong>1. Service的保活？</strong></p>
+<p>调用Context.startService方式启动Service时，如果内存不足，Service会被回收</p>
+<ul>
+<li><ol>
+<li>利用onStartCommand的返回值：START_STICKY，START_REDELIVER，onStartCommand的返回值有三个：<ul>
+<li>START_NOT_STICKY: 销毁不重建，默认选项</li>
+<li>START_STICKY: 销毁并重建，Intent为null</li>
+<li>START_REDELIVER_INTENT：销毁并重建，Intent为最后一次保存值</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>提高Service的优先级<ul>
+<li>在AndroidManifest.xml文件中对于intent-filter可以通过android:priority =”1000”这个属性设置最高优先级，1000是最高值，如果数字越小则优先级越低，同时适用于广播。</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><ol start="3">
+<li>提高Service进程的优先级<ul>
+<li>可以使用startForeground将service放到前台状态，这样低内存时，被杀死的概率会低一些。</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><ol start="4">
+<li>在onDestroy方法里重启Service<ul>
+<li>当service走到onDestroy()时，发送一个自定义广播，当收到广播时，重新启动service。</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><ol start="5">
+<li>系统广播监听Service状态</li>
+</ol>
+</li>
+<li><ol start="6">
+<li>将APK安装到/system/app，变身为系统级应用</li>
+</ol>
+</li>
+</ul>
+<p><strong>2. 是否了解IntentService？</strong></p>
+<p>IntentService是Android提供的后台服务类，我们在外部组件中通过Intent向IntentService发送请求命令，之后IntentService逐个执行命令队列里的命令，接收到首个命令时，IntentService就开始启动并开始一条后台线程执行首个命令，接着队列里的命令将会被顺序执行，最后执行完队列的所有命令后，服务也随即停止并被销毁。</p>
+<ul>
+<li>生命周期方法，同Service相同</li>
+<li>onCreate方法：在IntentService的onCreate方法中开启了一个异步线程HandlerThread来处理我们的请求，并利用Looper和Handler来管理我们的请求命令队列</li>
+<li>停止服务：如果启动 IntentService 多次，那么每一个耗时操作会以工作队列的方式在 IntentService 的 onHandleIntent 回调方法中执行，依次去执行，使用串行的方式，执行完自动结束。IntentService中的ServiceHandler的handleMassage中，每一次处理完数据之后都会调用stopSelf停止，该方法需要来自onStartCommand方法中的启动ID，只有在接收到最新的启动ID时才会停止服务，就是说，我们的IntentService直到命令队列中的所有命令被执行完后才会停止服务。</li>
+</ul>
+<p><strong>3. Service里面到底能不能执行耗时操作？</strong></p>
+<ul>
+<li>答案肯定是不能的，虽然Service定位是在后台执行长时间的操作，但是Service默认也是在主线程执行的，前面ANR讲过，前台服务执行超过20s就会ANR，平时你也许直接Service里面干过不算太久的耗时操作，并且看起来没什么事，那是因为后台服务ANR时间是200s。</li>
+<li>正确做法是在Service内部开启子线程，或者直接只要IntentService。再者，在清单文件中显式给Service声明一个进程，注意不是线程。</li>
+</ul>
+<p><strong>4. stopSelf()与stopSelf(startId)的区别</strong></p>
+<p>每一次调用startService(),在onStartCommand()方法中，会产生一个startId，stopSelf()默认会传一个startId为-1，表示停止所有请求，会销毁服务，而stopSelf(startId)只会停止startId的这一次请求。上面IntentService中，每一次onHandleIntent()之后stopSelf(startId)停止当前请求，所有任务执行完后，才会销毁服务。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/09/10/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android基础总结系列：Android的Window" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/09/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E7%9A%84Window/">Android基础总结系列：Android的Window</a>
+    </h1>
+  
+
+        
+        <a href="/2017/09/09/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E7%9A%84Window/" class="archive-article-date">
+  	<time datetime="2017-09-09T14:36:44.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-09</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="Window"><a href="#Window" class="headerlink" title="Window"></a>Window</h4><ol>
+<li>Window是一个抽象类，具体实现是PhoneWindow。不管是Activity、Dialog、Toast它们的视图都是附加在Window上的，因此Window实际上是View的直接管理者。<br>WindowManager是外界访问Window的入口，通过WindowManager可以创建Window，而Window的具体实现位于WindowManagerService中，WindowManager和WindowManagerService的交互是一个IPC过程。</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">mWindowManager &#x3D; (WindowManager) getSystemService(Context.WINDOW_SERVICE);</span><br><span class="line">mFloatingButton &#x3D; new Button(this);</span><br><span class="line">mFloatingButton.setText(&quot;click me&quot;);</span><br><span class="line">mLayoutParams &#x3D; new WindowManager.LayoutParams(</span><br><span class="line">        LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, 0, 0,</span><br><span class="line">        PixelFormat.TRANSPARENT);</span><br><span class="line">mLayoutParams.flags &#x3D; LayoutParams.FLAG_NOT_TOUCH_MODAL</span><br><span class="line">        | LayoutParams.FLAG_NOT_FOCUSABLE</span><br><span class="line">        | LayoutParams.FLAG_SHOW_WHEN_LOCKED;</span><br><span class="line">mLayoutParams.type &#x3D; LayoutParams.TYPE_SYSTEM_ERROR;</span><br><span class="line">mLayoutParams.gravity &#x3D; Gravity.LEFT | Gravity.TOP;</span><br><span class="line">mLayoutParams.x &#x3D; 100;</span><br><span class="line">mLayoutParams.y &#x3D; 300;</span><br><span class="line">mFloatingButton.setOnTouchListener(this);</span><br><span class="line">mWindowManager.addView(mFloatingButton, mLayoutParams);</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><p>WindowManager的flags和type：</p>
+<ol>
+<li><p>flags：</p>
+<ul>
+<li>FLAG_NOT_FOCUSABLE：window不需要获取焦点，也不需要各种输入事件，会同时启用FLAG_NOT_TOUCH_MODEAL，传递给下层有焦点的window</li>
+<li>FLAG_NOT_TOUCH_MODAL：当前区域外的点击事件传递给下层的window，当前window区域内事件资金处理</li>
+<li>FLAG_SHOW_WHEN_LOCKED：window显示在锁屏的界面上。</li>
+</ul>
+</li>
+<li><p>type：window的类型</p>
+<ul>
+<li>应用window：Activity，层级范围1-99</li>
+<li>子window：比如Dialog，层级范围1000-1999</li>
+<li>系统window：需要声明权限才能创建的window，比如Toast和系统状态栏，层级范围2000-2999</li>
+</ul>
+<p>Window是分层的，每一个window都有对应的z-ordered，层级大的会覆盖在层级小的window上，层级对应WindowManager.LayoutParams的type参数。一般系统Window选用TYPE_SYSTEM_OVERLAY或者TYPE_SYSTEM_ERROR（同时需要权限<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />）。</p>
+<ul>
+<li>WindowManager提供的功能：<ol>
+<li>addView</li>
+<li>updateViewLayout</li>
+<li>removeView<br>三个方法提供在ViewManager中，WindowManager继承自ViewManager。</li>
+</ol>
+</li>
+</ul>
+</li>
+</ol>
+</li>
+</ol>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/09/09/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E7%9A%84Window/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android基础总结系列：Android动画" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E5%8A%A8%E7%94%BB/">Android基础总结系列：Android动画</a>
+    </h1>
+  
+
+        
+        <a href="/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E5%8A%A8%E7%94%BB/" class="archive-article-date">
+  	<time datetime="2017-09-05T15:36:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-05</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Android三种动画："><a href="#Android三种动画：" class="headerlink" title="Android三种动画："></a>Android三种动画：</h3><h4 id="1-帧动画"><a href="#1-帧动画" class="headerlink" title="1. 帧动画"></a>1. 帧动画</h4><p>按顺序播放一组预定义的图片</p>
+<ul>
+<li>在res/drawable目录下定义一个XML文件，根节点为系统提供的animation-list，然后放入定义好的图片</li>
+<li>使用AnimationDrawable类播放定义好的drawable图片</li>
+</ul>
+<h4 id="2-补间动画-View动画"><a href="#2-补间动画-View动画" class="headerlink" title="2. 补间动画(View动画)"></a>2. 补间动画(View动画)</h4><p>View动画是Android一开始就提供的比较原始的动画，主要支持四种效果：</p>
+<ul>
+<li>平移（TranslateAnimation - <translate>）</li>
+<li>缩放（ScaleAnimation - <scale>）</li>
+<li>旋转（RotateAnimation - <rotate>）</li>
+<li>透明度（AlphaAnimation - <alpha>）</li>
+</ul>
+<p>可以通过在res/anim下创建xml动画文件或者代码实现：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version&#x3D;&quot;1.0&quot; encoding&#x3D;&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;translate xmlns:android&#x3D;&quot;http:&#x2F;&#x2F;schemas.android.com&#x2F;apk&#x2F;res&#x2F;android&quot;</span><br><span class="line">    android:fromXDelta&#x3D;&quot;100&quot;</span><br><span class="line">    android:fromYDelta&#x3D;&quot;0&quot;</span><br><span class="line">    android:toXDelta&#x3D;&quot;0&quot;</span><br><span class="line">    android:toYDelta&#x3D;&quot;0&quot;&#x2F;&gt;</span><br><span class="line"></span><br><span class="line">Animation translateAnimation &#x3D; new TranslateAnimation(0，500，0，500);</span><br><span class="line">    &#x2F;&#x2F; 创建平移动画的对象：平移动画对应的Animation子类为TranslateAnimation</span><br><span class="line">    &#x2F;&#x2F; 参数分别是：</span><br><span class="line">    &#x2F;&#x2F; 1. fromXDelta ：视图在水平方向x 移动的起始值</span><br><span class="line">    &#x2F;&#x2F; 2. toXDelta ：视图在水平方向x 移动的结束值</span><br><span class="line">    &#x2F;&#x2F; 3. fromYDelta ：视图在竖直方向y 移动的起始值</span><br><span class="line">    &#x2F;&#x2F; 4. toYDelta：视图在竖直方向y 移动的结束值</span><br><span class="line">    translateAnimation.setDuration(3000);</span><br><span class="line">    &#x2F;&#x2F; 播放动画直接 startAnimation(translateAnimation)</span><br><span class="line">    &#x2F;&#x2F;如：</span><br><span class="line">    mButton.startAnimation(translateAnimation);</span><br></pre></td></tr></table></figure>
+
+<p><strong>自定义View动画</strong></p>
+<ul>
+<li>重写initialize和applyTransformation，很多时候采用Camera简化矩阵变化，<code>自定义View动画的过程主要是矩阵变换的过程。</code></li>
+</ul>
+<p><strong>补间动画的使用场景：</strong></p>
+<ul>
+<li><p>LayoutAnimation，给ViewGroup指定child的出场动画，常常用在ListView等列表控件上</p>
+<ol>
+<li><p>定义LayoutAnimation：delay，animationOrder，animation等属性</p>
+</li>
+<li><p>子元素的具体动画效果</p>
+</li>
+<li><p>为ViewGroup指定android:layoutAnimation属性或者通过LayoutAnimationController实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&lt;layoutAnimation xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:animation=<span class="string">"@anim/test_anim"</span></span><br><span class="line">    android:delay=<span class="string">"0.5"</span></span><br><span class="line">    android:animationOrder=<span class="string">"normal"</span>&gt;</span><br><span class="line">&lt;/layoutAnimation&gt;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line"><span class="comment">// xml指定</span></span><br><span class="line">&lt;ListView</span><br><span class="line">    android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span></span><br><span class="line">    android:layoutAnimation=<span class="string">"@anim/layout_anim"</span> /&gt;</span><br><span class="line">    </span><br><span class="line"><span class="comment">// 代码指定</span></span><br><span class="line">Animation animation1 = AnimationUtils.loadAnimation(<span class="keyword">this</span>, R.anim.layout_anim);</span><br><span class="line">LayoutAnimationController controller = <span class="keyword">new</span> LayoutAnimationController(animation1);</span><br><span class="line">controller.setDelay(<span class="number">0.5f</span>);</span><br><span class="line">controller.setOrder(LayoutAnimationController.ORDER_NORMAL);</span><br><span class="line">listView.setLayoutAnimation(controller);</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+</li>
+<li><p>Activity/Fragment的切换效果</p>
+<ol>
+<li>activity overridePendingTransition，在startActivity和finish之后调用</li>
+<li>FragmentTransaction.setCustomAnimations</li>
+</ol>
+</li>
+</ul>
+<p><strong>补间动画的原理</strong></p>
+<p>补间动画的核心本质就是在一定的持续时间内，不断改变 Matrix 变换，并且不断刷新的过程。</p>
+<p>虽然 View 做了属性上的改变，但其实并没有更改 View 的 left、right、top、bottom 这些属性</p>
+<h4 id="3-属性动画"><a href="#3-属性动画" class="headerlink" title="3. 属性动画"></a>3. 属性动画</h4><ul>
+<li>ObjectAnimator  <objectAnimator> </li>
+<li>ValueAnimator  <animator> </li>
+<li>AnimationSet  <set> </li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">ObjectAnimator.ofFloat(view, &quot;translationX&quot;, 0).start();</span><br><span class="line"></span><br><span class="line">ValueAnimator valueAnimator &#x3D; ObjectAnimator.ofInt(view, &quot;backgroundColor&quot;);</span><br><span class="line">valueAnimator.setDuration(1000);</span><br><span class="line">valueAnimator.setEvaluator(new ArgbEvaluator());</span><br><span class="line">valueAnimator.setRepeatCount(ValueAnimator.INFINITE);</span><br><span class="line">valueAnimator.setRepeatMode(ValueAnimator.RESTART);</span><br><span class="line">valueAnimator.start();</span><br><span class="line"></span><br><span class="line">AnimatorSet animatorSet &#x3D; new AnimatorSet();</span><br><span class="line">animatorSet.playTogether(</span><br><span class="line">        ObjectAnimator.ofFloat(),</span><br><span class="line">        ObjectAnimator.ofFloat(),</span><br><span class="line">        ......</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 加载anim的xml</span><br><span class="line">AnimatorSet animatorSet1 &#x3D; (AnimatorSet) AnimatorInflater.loadAnimator(this, R.anim.layout_anim);</span><br><span class="line">animatorSet1.setTarget(view);</span><br><span class="line">animatorSet1.start();</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>监听器</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">AnimatorListener:</span><br><span class="line">&#x2F;**</span><br><span class="line"> * This adapter class provides empty implementations of the methods from &#123;@link android.animation.Animator.AnimatorListener&#125;.</span><br><span class="line"> * Any custom listener that cares only about a subset of the methods of this listener can</span><br><span class="line"> * simply subclass this adapter class instead of implementing the interface directly.</span><br><span class="line"> *&#x2F;</span><br><span class="line">void onAnimationStart(Animator animation)</span><br><span class="line">void onAnimationEnd(Animator animation)</span><br><span class="line">void onAnimationCancel(Animator animation)</span><br><span class="line">void onAnimationRepeat(Animator animation)</span><br><span class="line"></span><br><span class="line">AnimatorUpdateListener:</span><br><span class="line">&#x2F;**</span><br><span class="line"> * Implementors of this interface can add themselves as update listeners</span><br><span class="line"> * to an &lt;code&gt;ValueAnimator&lt;&#x2F;code&gt; instance to receive callbacks on every animation</span><br><span class="line"> * frame, after the current frame&#39;s values have been calculated for that</span><br><span class="line"> * &lt;code&gt;ValueAnimator&lt;&#x2F;code&gt;.</span><br><span class="line"> *&#x2F;</span><br><span class="line">void onAnimationUpdate(ValueAnimator animation);</span><br></pre></td></tr></table></figure>
+
+<p><strong>属性动画的监听器</strong></p>
+<ul>
+<li><p>AnimatorUpdateListener：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 监听整个动画过程，动画每播放一帧，onAnimationUpdate会被调用一次</span><br><span class="line">public static interface AnimatorUpdateListener &#123;</span><br><span class="line">void onAnimationUpdate(ValueAnimator animation);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>AnimatorListener：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 监听动画开始结束取消及重复播放</span><br><span class="line">&#x2F;&#x2F; 系统还提供了AnimatorListenerAdapter，方便使用</span><br><span class="line">public static interface AnimatorListener&#123;</span><br><span class="line">void onAnimationStart(Animator animation);</span><br><span class="line">void onAnimationEnd(Animator animation);</span><br><span class="line">void onAnimationCancel(Animator animation);</span><br><span class="line">void onAnimationRepeat(Animator animation);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p><strong>对任意属性做动画</strong></p>
+<p>对Object的属性abc做动画，需要满足的条件：</p>
+<ul>
+<li>Object提供setAbc方法，如果动画没有传入初始值，那么还要提供getAbc方法，因为系统会去取abc的初始值</li>
+<li>Object的setAbc对属性abc所做的改变有UI体现，不然没有视觉效果</li>
+</ul>
+<p>不满足的解决方案：</p>
+<ul>
+<li>有权限的话添加set/get方法</li>
+<li>借助包装类，间接提供set/get方法</li>
+<li>采用ValueAnimator，监听动画过程，自己实现属性的改变</li>
+</ul>
+<p><strong>属性动画的原理</strong></p>
+<p>在一定的时间间隔内，通过不断地对值进行改变，并不断将该值赋给对象的属性，从而实现该对象在属性上的动画效果。</p>
+<p>ViewGroup 在 getTransformedMotionEvent() 方法中会通过子 View 的 hasIdentityMatrix() 方法来判断子 View 是否应用过位移、缩放、旋转之类的属性动画。如果应用过的话，那还会调用子 View 的 getInverseMatrix() 做「反平移」操作，然后再去判断处理后的触摸点是否在子 View 的边界范围内。</p>
+<h4 id="插值器和估值器"><a href="#插值器和估值器" class="headerlink" title="插值器和估值器"></a>插值器和估值器</h4><ul>
+<li>插值器：设置的属性值从初始值过渡到结果值的变化规律，<strong>应用场景：</strong> 实现非线性运动的动画效果</li>
+<li>估值器：设置 属性值 从初始值过渡到结束值 的变化具体数值， 插值器（Interpolator）决定 值 的变化规律（匀速、加速blabla），即决定的是变化趋势；而接下来的具体变化数值则交给<br>而估值器， 属性动画特有的属性，<strong>应用场景：</strong> 协助插值器 实现非线性运动的动画效果</li>
+</ul>
+<p>动画默认刷新频率 10ms/帧</p>
+<h4 id="常见问题？"><a href="#常见问题？" class="headerlink" title="常见问题？"></a>常见问题？</h4><ul>
+<li>使用动画的注意事项有哪些？<ul>
+<li>OOM，主要出现在帧动画中</li>
+<li>内存泄漏：属性动画中无限循环的动画在Activity退出时要及时停止。</li>
+<li>兼容性问题</li>
+<li>View动画问题：View动画是对View的影像做动画，并未真正改变View状态，例如会出现动画结束后setVisibility(View.GONE)失效，需要调用view.clearAnimation</li>
+<li>不要使用px，可能会存在设备适配问题</li>
+<li>动画元素的交互：属性动画可以，ViewGroup 在 getTransformedMotionEvent() 方法中会通过子 View 的 hasIdentityMatrix() 方法来判断子 View 是否应用过位移、缩放、旋转之类的属性动画。如果应用过的话，那还会调用子 View 的 getInverseMatrix() 做「反平移」操作，然后再去判断处理后的触摸点是否在子 View 的边界范围内。</li>
+<li>硬件加速</li>
+</ul>
+</li>
+</ul>
+<p>参考资料：<a href="https://www.jianshu.com/p/5d0899dca46e" target="_blank" rel="noopener">https://www.jianshu.com/p/5d0899dca46e</a></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E5%8A%A8%E7%94%BB/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android基础总结系列：View的事件分发与绘制" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AView%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E4%B8%8E%E7%BB%98%E5%88%B6/">Android基础总结系列：View的事件分发与绘制</a>
+    </h1>
+  
+
+        
+        <a href="/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AView%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E4%B8%8E%E7%BB%98%E5%88%B6/" class="archive-article-date">
+  	<time datetime="2017-09-05T12:36:12.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-05</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>[TOC]</p>
+<h4 id="View基础"><a href="#View基础" class="headerlink" title="View基础"></a>View基础</h4><p>一些基础：</p>
+<ul>
+<li><p>MotionEvent：触摸事件序列：ACTION_DOWN、ACTION_MOVE、ACTION_UP</p>
+</li>
+<li><p>TouchSlop：可以识别出的滑动最小距离;判断此时是否属于滑动事件</p>
+</li>
+<li><p>VelocityTracker：滑动速度</p>
+</li>
+<li><p>GestureDetector：手势检测，手势处理场景：双击、滑动、长按等</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public boolean onTouchEvent(MotionEvent event) &#123;</span><br><span class="line">    return gestureDetector.onTouchEvent(event);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">GestureDetector gestureDetector &#x3D; new GestureDetector(this.getContext(), new GestureDetector.OnGestureListener() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public boolean onDown(MotionEvent e) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onShowPress(MotionEvent e) &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onSingleTapUp(MotionEvent e) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onLongPress(MotionEvent e) &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实现View的滑动方式</p>
+<ul>
+<li>通过View本身提供的scrollBy/scrollTo</li>
+<li>通过动画给View添加平移效果</li>
+<li>通过改变View的LayoutParams使得View重新布局从而实现滑动</li>
+</ul>
+</li>
+<li><p>View的弹性滑动</p>
+<ul>
+<li>Scroller：本身没有实现弹性滑动，需要和View的computeScroll配合实现</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 1. 首先初始化一个对象</span><br><span class="line">private void init(Context context) &#123;</span><br><span class="line">    scroller &#x3D; new Scroller(context);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 2. 然后重写View的computeScroll方法和调用的方法</span><br><span class="line">public void smoothScrollTo(int destX, int dextY) &#123;</span><br><span class="line">    int scrollX &#x3D; getScrollX();</span><br><span class="line">    int delta &#x3D; destX - scrollX;</span><br><span class="line">    &#x2F;&#x2F;在1s内滑向delta，效果就是慢慢滑动</span><br><span class="line">    scroller.startScroll(scrollX, 0, delta, 0,1000);</span><br><span class="line">    invalidate();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public void computeScroll() &#123;</span><br><span class="line">    if (scroller.computeScrollOffset()) &#123;</span><br><span class="line">        scrollTo(scroller.getCurrX(), scroller.getCurrY());</span><br><span class="line">        postInvalidate();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 3. 调用</span><br><span class="line">private void initView() &#123;</span><br><span class="line">    final MyButton button &#x3D; findViewById(R.id.button);</span><br><span class="line">    linearLayout &#x3D; findViewById(R.id.lin);</span><br><span class="line"></span><br><span class="line">    button.setOnClickListener(new View.OnClickListener() &#123;</span><br><span class="line">        @Override</span><br><span class="line">        public void onClick(View v) &#123;</span><br><span class="line">            linearLayout.smoothScrollTo(-500,0);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">流程：首先通过Scroller类的startScroll()+invalidate()触发View的computeScroll()，在computeScroll()中让Scroller类去计算最新的坐标信息，拿到最新的坐标偏移信息后还是要调用View的scrollTo来实现滑动</span><br></pre></td></tr></table></figure>
+
+<p><strong>Scroller工作机制：</strong> Scroller本身并不能实现View的滑动，他需要配合View的computeScroll方法，他不断的让View重绘，每一次重绘就会根据时间间隔，算出当前的位置，然后通过scrollTo进行滑动，这样每一次重绘都会移动一小点距离，多次小幅度移动就组成了弹性滑动。</p>
+<ul>
+<li>通过插值器动画</li>
+<li>使用延时策略</li>
+</ul>
+</li>
+</ul>
+<h4 id="View的事件分发"><a href="#View的事件分发" class="headerlink" title="View的事件分发"></a>View的事件分发</h4><p>View的事件分发主要涉及三个方法：</p>
+<ul>
+<li>dispatchTouchEvent：主要负责View事件的分发，返回值收到当前View的onTouchEvent事件返回值和下级View的dispatchTouchEvent的影响。</li>
+<li>onInterceptTouchEvent：内部调用，用于判断是否拦截当前事件。</li>
+<li>onTouchEvent：用来处理点击事件，返回值表示是否消费当前事件。</li>
+</ul>
+<p>伪代码表示三者的关系：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public boolean dispatchTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">    boolean consume &#x3D; false;</span><br><span class="line">    if (onInterceptTouchEvent(ev)) &#123;</span><br><span class="line">        consume &#x3D; onTouchEvent(ev);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        consume &#x3D; child.dispatchTouchEvent();</span><br><span class="line">    &#125;</span><br><span class="line">    return consume;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>具体流程参考下图：</strong></p>
+<p><a href="http://img.bigyoung.cn:1111/image/UaWH" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/26/82f19c8653fb7391a21bb55c33eee736.png" alt="82f19c8653fb7391a21bb55c33eee736.png"></a></p>
+<h5 id="事件分发常见的问题集合"><a href="#事件分发常见的问题集合" class="headerlink" title="事件分发常见的问题集合"></a>事件分发常见的问题集合</h5><ol>
+<li><p>事件分发的主要流程？</p>
+<p>用户从触摸屏幕至离开会产生一系列的事件，down-move-move……move-up，Android会将一个事件包装成MotionEvent，从Activity#dispatchTouchEvent开始分发，activity-&gt;window-&gt;decorView-&gt;viewGroup-&gt;View，主要涉及到几个方法：</p>
+<ul>
+<li>dispatchTouchEvent：用于事件的分发，所有的事件都必须经过这个方法的分发，然后决定是自身消费还是往下分发，true表示不继续分发，false继续往下分发，如果是ViewGroup则调用onInterceptTouchEvent进行判断是否拦截该事件</li>
+<li>onInterceptTouchEvent：ViewGroup方法，用于判断是否拦截事件</li>
+<li>onTouchEvent：事件消费是否消费</li>
+</ul>
+</li>
+<li><p>子View在消费掉Down事件后，后续的事件都会传递给它，怎么实现的？</p>
+<p>ViewGroup中有一个mFirstTouchTarget成员变量用于保存消费事件的子View的信息，因为Android是支持多指操作的，所以mFirstTouchTarget是一个TouchTarget的链表，View的dispatchTouchEvent有三个阶段：判断是否拦截；找到消费的View，更新mFirstTouchTarget；根据是否拦截和mFirstTouchEvent再次分发事件</p>
+</li>
+<li><p>CANCEL事件什么时候触发？</p>
+<p>Down事件父View不拦截，后续的事件父View重新拦截的时候，会将拦截事件改为CANCEL事件分发给子View</p>
+</li>
+<li><p>requestDisallowInterceptTouchEvent方法的作用？</p>
+<p>干预父View的事件分发，比如在接收到Down事件后调用该方法阻止viewGroup拦截事件，但是如果ViewGroup从Down事件就拦截了，那么子view调用会无效，因为不是Down事件并且mFirstTouchEvent为null，那么viewGroup就直接拦截分发了</p>
+</li>
+<li><p>DOWN事件被子View消费了，ViewGroup是否可以拦截后续的事件，如果拦截了，当前这个事件viewGroup能消费吗？子View还会收到事件吗？</p>
+<p>可以拦截，拦截后当前事件会被改为CANCEL事件分发给子View，该事件就不能被viewGroup消费了。所以可以拦截后续事件，不能消费，子View会收到CANCEL事件。</p>
+</li>
+<li><p>当View Disable时，会消费事件吗？</p>
+<p>可以消费，但是不会有任何的反应。只要clickable、long_clickable或者context_clickable其中一个为true的话，就会对事件进行消费。</p>
+</li>
+<li><p>onTouchListener、onClickListener的优先级？</p>
+<p>View需要处理事件时，如果设置了OnTouchListener，OnTouchLisener的onTouch方法会被回调，返回false则View的onTouchEvent被调用，true，onTouchEvent不会被调用，可见OnTouchListener优先级高于onTouchEvent，在onTouchEvent回调中，如果设置了OnClickListener，则onClick会被回调，所以优先级：OnTouchListener &gt; onTouchEvent &gt; OnClickListener</p>
+</li>
+</ol>
+<h4 id="View的绘制流程"><a href="#View的绘制流程" class="headerlink" title="View的绘制流程"></a>View的绘制流程</h4><p>View的绘制主要涉及三个方法：</p>
+<ul>
+<li>measure: 测量，根据xml和代码测量ViewGroup和View的大小</li>
+<li>layout：布局，根据测量结果及布局参数确定显示的位置</li>
+<li>draw：绘制。</li>
+</ul>
+<p><img src="http://img.bigyoung.cn:1111/images/2020/08/28/0a77108276c059741234ec56db3a7935.png" alt="0a77108276c059741234ec56db3a7935.png"></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AView%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E4%B8%8E%E7%BB%98%E5%88%B6/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android基础总结系列：Binder的IPC方式" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E7%9A%84IPC%E6%96%B9%E5%BC%8F/">Android基础总结系列：Binder的IPC方式</a>
+    </h1>
+  
+
+        
+        <a href="/2017/09/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E7%9A%84IPC%E6%96%B9%E5%BC%8F/" class="archive-article-date">
+  	<time datetime="2017-09-01T15:35:57.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-01</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Binder的IPC方式"><a href="#Binder的IPC方式" class="headerlink" title="Binder的IPC方式"></a>Binder的IPC方式</h3><p>[TOC]</p>
+<h4 id="1-Bundle"><a href="#1-Bundle" class="headerlink" title="1. Bundle"></a>1. Bundle</h4><p>四大组件中三大组件(Activity、Service、Receiver)都支持Intent传递Bundle数据，Bundle实现了Parcelable接口，所以可以在不同进程间传输，具体传递的数据类型，可以根据Bundle所支持的类型。</p>
+<h4 id="2-文件共享"><a href="#2-文件共享" class="headerlink" title="2. 文件共享"></a>2. 文件共享</h4><p>两个进程通过读/写同一个文件来进行交换数据。</p>
+<ul>
+<li>通过 ObjectOutputStream / ObjectInputStream 序列化一个对象到文件中，或者在另一个进程从文件中反序列这个对象。注意：反序列化得到的对象只是内容上和序列化之前的对象一样，本质是两个对象。</li>
+<li>文件并发读写会导致读出的对象可能不是最新的，并发写的话那就更严重了 。所以文件共享方式适合对数据同步要求不高的进程之间进行通信，并且要妥善处理并发读写问题。</li>
+<li>SharedPreferences 底层实现采用XML文件来存储键值对。系统对它的读/写有一定的缓存策略，即在内存中会有一份 SharedPreferences 文件的缓存，因此在多进程模式下，系统对它的读/写变得不可靠，面对高并发读/写时 SharedPreferences 有很大几率丢失数据，因此不建议在IPC中使用 SharedPreferences 。</li>
+</ul>
+<h4 id="3-Messenger"><a href="#3-Messenger" class="headerlink" title="3. Messenger"></a>3. Messenger</h4><p>Messenger是一种轻量级的IPC方案，他的底层实现是AIDL，这个可以通过他的构造方法看到：<code>mTarget = IMessenger.Stub.asInterface(target);</code></p>
+<p><strong>1. 服务端进程</strong></p>
+<p>创建Service，同时创建Handler并通过它创建Messenger，在service的onBind中返回Messenger底层的Binder。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MessengerService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Messenger messenger = <span class="keyword">new</span> Messenger(<span class="keyword">new</span> MessengerHandler());</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> messenger.getBinder();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MessengerHandler</span> <span class="keyword">extends</span> <span class="title">Handler</span> </span>&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleMessage</span><span class="params">(Message msg)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>.handleMessage(msg);</span><br><span class="line">            Log.i(<span class="string">"TAG"</span>, <span class="string">"receive message from client:"</span> + msg.getData().getString(<span class="string">"msg"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>2. 客户端进程</strong></p>
+<p>绑定服务端的Service，绑定成功后用服务端返回的IBinder创建Messenger，通过这个Messenger的send方法就可以给服务端发送消息了，发送消息的类型为Message对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Messenger serviceMessenger;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">(Bundle savedInstanceState)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.onCreate(savedInstanceState);</span><br><span class="line">    setContentView(R.layout.activity_main);</span><br><span class="line">    Intent intent = <span class="keyword">new</span> Intent();</span><br><span class="line">    intent.setAction(<span class="string">"com.gqq.messengerservice"</span>);</span><br><span class="line">    <span class="comment">// 5.0以上需要设置，服务端包名</span></span><br><span class="line">    intent.setPackage(<span class="string">"com.gqq.messengerdemo"</span>);</span><br><span class="line">    bindService(intent, connection, Context.BIND_AUTO_CREATE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> ServiceConnection connection = <span class="keyword">new</span> ServiceConnection() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceConnected</span><span class="params">(ComponentName name, IBinder service)</span> </span>&#123;</span><br><span class="line">        serviceMessenger = <span class="keyword">new</span> Messenger(service);</span><br><span class="line">        Message message = Message.obtain();</span><br><span class="line">        Bundle bundle = <span class="keyword">new</span> Bundle();</span><br><span class="line">        bundle.putString(<span class="string">"msg"</span>, <span class="string">"hello, I am client"</span>);</span><br><span class="line">        message.setData(bundle);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            serviceMessenger.send(message);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">            Log.i(<span class="string">"TAG"</span>, e.getMessage());</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceDisconnected</span><span class="params">(ComponentName name)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>案例</strong></p>
+<p>如果需要服务端可以回应客户端，也需要在客户端创建一个Handler并创建Messenger，并通过Message的replyTo参数传递给服务端。</p>
+<p>具体案例参考：<a href="https://github.com/gqq519/MessengerDemo" target="_blank" rel="noopener">MessengerDemo</a></p>
+<p><strong>工作原理</strong></p>
+<p><a href="http://img.bigyoung.cn:1111/image/Uf86" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/25/629465c00d05f6e18ab179664e3ea654.png" alt="629465c00d05f6e18ab179664e3ea654.png"></a></p>
+<h4 id="4-AIDL"><a href="#4-AIDL" class="headerlink" title="4. AIDL"></a>4. AIDL</h4><p>Messenger不适合应用于有大量并发请求的情况，Messenger的主要的作用是为了传递消息，另外，如果我们需要跨进程调用服务端的方法，那Messenger就无法做到了，可以通过AIDL实现。</p>
+<p>参考：<a href="https://blog.csdn.net/gqqzxc/article/details/80060369" target="_blank" rel="noopener">Binder：AIDL</a></p>
+<h4 id="5-ContentProvider"><a href="#5-ContentProvider" class="headerlink" title="5. ContentProvider"></a>5. ContentProvider</h4><p>ContentProvider是Android提供的专门用于不同进程间数据共享的方式，和Messenger一样底层实现是Binder。</p>
+<p>系统预置了许多ContentProvider，比如通信录、日程表信息等，只需要通过ContentResolver的query、update、insert和delete方法即可。</p>
+<p>创建自定义的ContentProvider，只需继承ContentProvider类并实现 onCreate 、 query 、 update 、 insert 、 getType 六个抽象方法即可。getType用来返回一个Uri请求所对应的MIME类型，剩下四个方法对应于CRUD操作。这六个方法都运行在ContentProvider进程中，除了 onCreate 由系统回调并运行在主线程里，其他五个方法都由外界调用并运行在Binder线程池中。</p>
+<p>ContentProvider是通过Uri来区分外界要访问的数据集合，例如外界访问ContentProvider中的表，我们需要为它们定义单独的Uri和Uri_Code。根据Uri_Code，我们就知道要访问哪个表了。</p>
+<p><strong>query、update、insert、delete四大方法存在多线程并发访问，因此方法内部要做好线程同步。</strong> 若采用SQLite并且只有一个SQLiteDatabase，SQLiteDatabase内部已经做了同步处理。若是多个SQLiteDatabase或是采用List作为底层数据集，就必须做线程同步。</p>
+<p>参考Demo：<a href="https://github.com/gqq519/ContentProviderDemo" target="_blank" rel="noopener">案例Demo</a></p>
+<h4 id="6-Socket"><a href="#6-Socket" class="headerlink" title="6. Socket"></a>6. Socket</h4><p>Socket 又称为“套接字”，分为流式套接字和用户数据报套接字，分别对应网络传输层的TCP和UDP协议。</p>
+<p>参考Demo：<a href="https://note.youdao.com/" target="_blank" rel="noopener">SocketDemo</a></p>
+<h4 id="IPC方式的优缺点及使用场景"><a href="#IPC方式的优缺点及使用场景" class="headerlink" title="IPC方式的优缺点及使用场景"></a>IPC方式的优缺点及使用场景</h4><table>
+<thead>
+<tr>
+<th align="center">名称</th>
+<th align="center">优点</th>
+<th align="center">缺点</th>
+<th align="center">适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">Bundle</td>
+<td align="center">简单易用</td>
+<td align="center">只能传递Bundle支持的数据类型</td>
+<td align="center">四大组件间的进程间通讯</td>
+</tr>
+<tr>
+<td align="center">文件共享</td>
+<td align="center">简单易用</td>
+<td align="center">不适合高并发，并且无法做到进程间的即时通讯</td>
+<td align="center">无并发访问场景，交换简单数据且实时性不高的场景</td>
+</tr>
+<tr>
+<td align="center">AIDL</td>
+<td align="center">功能强大，支持一对多并发通讯且实时通讯</td>
+<td align="center">使用复杂，需要处理好线程同步</td>
+<td align="center">一对多通讯且RPC需求</td>
+</tr>
+<tr>
+<td align="center">Messenger</td>
+<td align="center">功能一般，支持一对多的串行通讯，支持实时通讯</td>
+<td align="center">不能很好的处理高并发，不支持RPC，数据通过Message传输，因此只能传递Bundle支持的类型数据</td>
+<td align="center">低并发的即时通讯，无需支持RPC或者不需要返回结果的RPC需求</td>
+</tr>
+<tr>
+<td align="center">ContentProvider</td>
+<td align="center">数据源访问方面功能强大，支持一对多的高并发数据共享，可以通过Call扩展其他功能</td>
+<td align="center">可以理解为受约束的AIDL，主要提供数据源的CRUD操作</td>
+<td align="center">一对多的进程间数据共享</td>
+</tr>
+<tr>
+<td align="center">Socket</td>
+<td align="center">功能强大，可以通过网络传输字节流，支持一对多的并发通讯</td>
+<td align="center">实现细节繁琐，不支持直接的RPC</td>
+<td align="center">网路数据交换</td>
+</tr>
+</tbody></table>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/09/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E7%9A%84IPC%E6%96%B9%E5%BC%8F/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android基础总结系列：Binder上层原理浅析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/">Android基础总结系列：Binder上层原理浅析</a>
+    </h1>
+  
+
+        
+        <a href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/" class="archive-article-date">
+  	<time datetime="2017-08-29T13:30:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-29</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Binder上层原理浅析"><a href="#Binder上层原理浅析" class="headerlink" title="Binder上层原理浅析"></a>Binder上层原理浅析</h3><p>[TOC]</p>
+<h4 id="1-IBinder简介"><a href="#1-IBinder简介" class="headerlink" title="1. IBinder简介"></a>1. IBinder简介</h4><p>Binder实现IBinder接口，IBinder是一个接口，代表一种跨进程传输的能力，实现此接口，就可以将此对象进行跨进程传递。</p>
+<p>根据IBinder的源码介绍及分析，可以了解很多信息(译自IBinder的源码介绍并总结)：</p>
+<p><strong>1. IBinder是高性能、轻量级进程间通信的基本接口，该接口定义了与远程对象通信的协议。<code>不能直接实现此接口，而要继承自它的实现类Binder</code>。</strong></p>
+<p><strong>2. IBinder主要API是transact()和Binder的onTransact(), 这两个方法进行发送和接收Binder对象，调用trasact的返回数据会在onTransact回调后返回。</strong></p>
+<p>场景：调用<code>IBinder的transact()</code>给IBinder对象发送请求，然后经过Binder的<code>Binder.onTransact()</code>得到调用，远程操作的目标得到回调。</p>
+<p>IBinder的transact方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Perform a generic operation with the object.</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> code The action to perform.  This should</span></span><br><span class="line"><span class="comment"> * be a number between &#123;<span class="doctag">@link</span> #FIRST_CALL_TRANSACTION&#125; and</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@link</span> #LAST_CALL_TRANSACTION&#125;.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> data Marshalled data to send to the target.  Must not be null.</span></span><br><span class="line"><span class="comment"> * If you are not sending any data, you must create an empty Parcel</span></span><br><span class="line"><span class="comment"> * that is given here.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> reply Marshalled data to be received from the target.  May be</span></span><br><span class="line"><span class="comment"> * null if you are not interested in the return value.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> flags Additional operation flags.  Either 0 for a normal</span></span><br><span class="line"><span class="comment"> * RPC, or &#123;<span class="doctag">@link</span> #FLAG_ONEWAY&#125; for a one-way RPC.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">transact</span><span class="params">(<span class="keyword">int</span> code, Parcel data, Parcel reply, <span class="keyword">int</span> flags)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> RemoteException</span>;</span><br></pre></td></tr></table></figure>
+
+<p>与他对应的Binder的onTransact方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Default implementation is a stub that returns false.  You will want</span></span><br><span class="line"><span class="comment"> * to override this to do the appropriate unmarshalling of transactions.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;If you want to call this, call transact().</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">boolean</span> <span class="title">onTransact</span><span class="params">(<span class="keyword">int</span> code, Parcel data, Parcel reply,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">int</span> flags)</span> <span class="keyword">throws</span> RemoteException </span>&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>两个方法的参数一致，参数具体意义是什么？</p>
+<ul>
+<li><strong>code：</strong>要执行的动作，类似于Handler的what，自定义Code值需要在<code>IBinder.FIRST_CALL_TRANSACTION</code>(0x00000001)和<code>IBinder.LAST_CALL_TRANSACTION</code> (0x00ffffff)之间。其中IBinder内部定义了部分code：<ul>
+<li>PING_TRANSACTION：表示要调用<code>pingBinder()</code></li>
+<li>DUMP_TRANSACTION：获取Binder内部状态</li>
+<li>SHELL_COMMAND_TRANSACTION：执行一个Shell命令</li>
+<li>INTERFACE_TRANSACTION：询问接收方的接口描述符号</li>
+<li>TWEET_TRANSACTION：发送推文给目标对象</li>
+<li>LIKE_TRANSACTION</li>
+</ul>
+</li>
+<li><strong>data：</strong>传入的数据，传入的数据不能为null，如果没有要传递的数据，也要创建一个空对象</li>
+<li><strong>reply：</strong>返回的数据，如果回调未返回数据，可以为空</li>
+<li><strong>flags：</strong>额外的标志<ul>
+<li>0：普通的远程通信过程</li>
+<li>FLAG_ONEWAY：单向通信，意味着client的<code>transact()</code>单向调用立即返回，而不用等待被叫者的结果。 仅在调用者和被调用者处于不同的进程时适用。</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">注意：IBinder的transact()是同步方法，被调用后会一直阻塞直到Binder.onTransact()调用完成后才会返回结果。</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. 通过transact（）发送的数据是一个<code>Parcel</code>对象，<code>Parcel</code> 中保存了数据以及描述数据的元数据，元数据在缓存区中保持了 IBinder 对象的引用，这样不同进程都可以访问同一个数据。</strong></p>
+<p>元数据用于管理缓冲区中的IBinder对象的引用，确保当IBinder写入Parcel对象发送到另一个进程时，另一个进程发送同一个IBinder回到原来的进程，原进程接收的IBinder对象和开始发送的是同一个引用。</p>
+<p><strong>跨进程传输后引用未发生改变，使得IBinder/Binder对象在跨进程通信时可以作为唯一标志(用作token或其他目的)</strong></p>
+<p><strong>4. 系统在每个进程中都有一个处理事物的线程池，这些线程用于调度其他进程对当前进程的跨进程访问。</strong></p>
+<p>比如说进程 A 对进程 B 发起 IPC 时，A 中调用 <code>transact()</code> 的线程会阻塞。B 中的事物线程池收到 A 的 IPC，调用目标对象的 <code>Binder.onTransact()</code> 方法，然后返回带结果的 Parcel。一旦接收到结果，A 中阻塞的线程得以继续执行。</p>
+<p><strong>5. Binder支持进程间的递归调用。</strong></p>
+<p>比如，进程 A 向进程 B 发起 IPC，而进程 B 在其 <code>Binder.onTransact()</code> 中又用 <code>transact()</code> 向进程 A 发起 IPC，那么进程 A 在等待它发出的调用返回的同时，也会响应 B 的调用，对调用的对象执行 Binder.onTransact() 方法。</p>
+<p><strong>6. 跨进程通信时，IBinder提供三种方法来检测远程进程是否可用</strong></p>
+<ul>
+<li><strong>transact()</strong>：在其进程不再存在的IBinder上调用它，则transact()方法将引发RemoteException异常。</li>
+<li><strong>pingBinder()</strong>：如果远程进程不再存在，则会返回false。</li>
+<li><strong>linkToDeath()</strong>：可以使用linkToDeath（）方法向IBinder注册一个DeathRecipient，当其所在的进程消失时将调用它。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">源码：</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Check to see if the object still exists.</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> Returns false if the</span></span><br><span class="line"><span class="comment"> * hosting process is gone, otherwise the result (always by default</span></span><br><span class="line"><span class="comment"> * true) returned by the pingBinder() implementation on the other</span></span><br><span class="line"><span class="comment"> * side.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">pingBinder</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Register the recipient for a notification if this binder</span></span><br><span class="line"><span class="comment"> * goes away.  If this binder object unexpectedly goes away</span></span><br><span class="line"><span class="comment"> * (typically because its hosting process has been killed),</span></span><br><span class="line"><span class="comment"> * then the given &#123;<span class="doctag">@link</span> DeathRecipient&#125;'s</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@link</span> DeathRecipient#binderDied DeathRecipient.binderDied()&#125; method</span></span><br><span class="line"><span class="comment"> * will be called.</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * &lt;p&gt;You will only receive death notifications for remote binders,</span></span><br><span class="line"><span class="comment"> * as local binders by definition can't die without you dying as well.</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> RemoteException if the target IBinder's</span></span><br><span class="line"><span class="comment"> * process has already died.</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #unlinkToDeath</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">linkToDeath</span><span class="params">(DeathRecipient recipient, <span class="keyword">int</span> flags)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> RemoteException</span>;</span><br><span class="line">        </span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Interface for receiving a callback when the process hosting an IBinder</span></span><br><span class="line"><span class="comment"> * has gone away.</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #linkToDeath</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DeathRecipient</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">binderDied</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="2-Binder-代码分析"><a href="#2-Binder-代码分析" class="headerlink" title="2. Binder 代码分析"></a>2. Binder 代码分析</h4><p>在<a href="https://blog.csdn.net/gqqzxc/article/details/80060369" target="_blank" rel="noopener">AIDL的实践</a>中AIDL自动生成了接口文件，分析一下生成的代码：</p>
+<ul>
+<li><p><strong>生成的接口IUserManager继承自IInterface，并声明了在IUserManager.aidl中声明的方法</strong></p>
+<p><img src="http://img.bigyoung.cn:1111/images/2020/08/25/d72bc5b06b7a23720f77d87f5ddb47cc.png" alt="d72bc5b06b7a23720f77d87f5ddb47cc.png"></p>
+<p>根据接口描述分析：</p>
+<ul>
+<li>IInterface：Binder的基类接口，Binder通信中当定义一个新接口，必须继承自IInterface。</li>
+</ul>
+</li>
+<li><p><strong>IUserManager声明了一个内部类Stub，Stub继承自Binder实现IUserManager，是一个Binder类</strong></p>
+<p><a href="http://img.bigyoung.cn:1111/image/UVE3" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/25/67ed5a766480c21a4dd5af8779a6bbff.png" alt="67ed5a766480c21a4dd5af8779a6bbff.png"></a></p>
+<p>Stub内部类实现了IUserManager接口和接口的方法，并定义了几个int类型的整数，整数主要用于标识在transact和onTransact中客户端请求的到底是什么方法。</p>
+<ul>
+<li>Stub.asBinder：返回值IBinder，检索与此接口关联的Binder对象。 您必须使用此方法进行简单转换，以便代理对象可以返回正确的结果。</li>
+</ul>
+</li>
+<li><p><strong>内部类Stub声明一个内部代理类Proxy</strong></p>
+<p><img src="http://img.bigyoung.cn:1111/images/2020/08/25/ee8d8b8cd8f4d0c5ea60de557319cbf3.png" alt="ee8d8b8cd8f4d0c5ea60de557319cbf3.png"></p>
+</li>
+</ul>
+<p>  代理类Proxy主要完成方法实现及transact调用过程。</p>
+<p><strong>分析：</strong> 接口的核心实现是内部类Stub和Stub的内部代理类Proxy，着重分析两个类的方法含义。</p>
+<p><strong>DESCRIPTOR</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> java.lang.String DESCRIPTOR = <span class="string">"com.gqq.binderaidl.IUserManager"</span>;</span><br></pre></td></tr></table></figure>
+
+<p>Binder的唯一标识，一般用当前Binder的类名表示，类似于Token。</p>
+<p><strong>asInterface(android.os.IBinder obj)</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Cast an IBinder object into an com.gqq.binderaidl.IUserManager interface,</span></span><br><span class="line"><span class="comment"> * generating a proxy if needed.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> com.gqq.binderaidl.<span class="function">IUserManager <span class="title">asInterface</span><span class="params">(android.os.IBinder obj)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> ((obj == <span class="keyword">null</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 尝试检索此Binder对象接口的本地实现。</span></span><br><span class="line">    android.os.IInterface iin = obj.queryLocalInterface(DESCRIPTOR);</span><br><span class="line">    <span class="keyword">if</span> (((iin != <span class="keyword">null</span>) &amp;&amp; (iin <span class="keyword">instanceof</span> com.gqq.binderaidl.IUserManager))) &#123;</span><br><span class="line">        <span class="keyword">return</span> ((com.gqq.binderaidl.IUserManager) iin);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> com.gqq.binderaidl.IUserManager.Stub.Proxy(obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>用于将服务端的Binder对象转换为客户端所需要的AIDL接口类型的对象，转换是区分进程的，如果在同一个进程，则返回服务端的Stub本身，否则返回的是系统封装后的Stub.proxy对象，根据<code>queryLocalInterface</code>可以得知，如果返回null，必须要实例化代理类调用transact()，所以返回Stub.proxy对象。</p>
+<p><strong>asBinder</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> android.os.<span class="function">IBinder <span class="title">asBinder</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>返回当前的Binder对象。</p>
+<p><strong>onTransact</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onTransact</span><span class="params">(<span class="keyword">int</span> code, android.os.Parcel data, android.os.Parcel reply, <span class="keyword">int</span> flags)</span> <span class="keyword">throws</span> android.os.RemoteException </span>&#123;</span><br><span class="line">    <span class="keyword">switch</span> (code) &#123;</span><br><span class="line">        <span class="keyword">case</span> INTERFACE_TRANSACTION: &#123;&#125;</span><br><span class="line">        <span class="keyword">case</span> TRANSACTION_basicTypes: &#123;&#125;</span><br><span class="line">        <span class="keyword">case</span> TRANSACTION_addUser: &#123;&#125;</span><br><span class="line">        <span class="keyword">case</span> TRANSACTION_getUserList: &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">super</span>.onTransact(code, data, reply, flags);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>方法运行在服务端的Binder线程池中，当客户端发起请求，远程请求会通过底层封装后交给此方法处理，此方法完成后将结果返回给发起请求者。</p>
+<ul>
+<li>根据code确定客户端请求的是什么目标方法。</li>
+<li>从data中取出目标方法所需要的参数，如果有参数的话，然后执行目标方法。</li>
+<li>目标方法执行完毕后，向reply中写入返回值(如果目标方法有返回值的话)</li>
+<li>如果此方法返回false，客户端请求会失败，可以利用这个特性做权限验证，来避免随便一个进程都可以调用我们的服务。</li>
+</ul>
+<p><strong>Proxy#addUser()、getUserList()</strong></p>
+<p>两个方法都运行在客户端，大致实现：</p>
+<ul>
+<li>创建该方法需要的输入型Parcel对象_data、输出型Parcel对象_reply和返回值对象list</li>
+<li>把该方法的参数信息写入_data中(如果有参数的话)</li>
+<li>调用transact()方法发起RPC(远程过程调用)请求，同时线程挂起，等待服务端onTransact调用及RPC过程返回，当前线程继续执行，并从reply中取出返回结果，最后返回_replay的数据，没有返回值，就不返回。</li>
+</ul>
+<p><strong>注意：</strong>客户端发起远程请求时，当前线程会挂起直到服务端进程返回数据，所以如果一个远程方法是耗时的操作，那么不能在UI线程中发起此远程请求。</p>
+<p><strong>工作流程图：</strong></p>
+<p><a href="http://img.bigyoung.cn:1111/image/Uile" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/25/a2662a3ac4664503e58f5501d681ef67.md.png" alt="a2662a3ac4664503e58f5501d681ef67.md.png"></a></p>
+<p>创建的aidl文件只是为了帮助生成接口，也可以不借助aid，自己创建接口。</p>
+<p><strong>在进程间通讯时两个重要的方法：<code>linkToDeath</code>和<code>unlinkToDeath</code></strong></p>
+<p>上述有介绍说linkToDeath可以检测服务端进程是否异常，如果断裂，导致远程调用失败，而客户端未知，功能会受影响。为了解决这个问题，所以提供了两个配对的方法：<code>linkToDeath</code>和<code>unlinkToDeath</code>，通过<code>linkToDeath</code>可以给Binder设置一个死亡代理，当Binder死亡时，我们会收到通知。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> IBinder.DeathRecipient deathRecipient = <span class="keyword">new</span> IBinder.DeathRecipient() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">binderDied</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (userManager == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Log.i(<span class="string">"TAG"</span>, <span class="string">"binderDied"</span>);</span><br><span class="line">        userManager.asBinder().unlinkToDeath(deathRecipient, <span class="number">0</span>);</span><br><span class="line">        userManager = <span class="keyword">null</span>;</span><br><span class="line">        <span class="comment">// 重新绑定远程Service</span></span><br><span class="line">        bindUserService();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> ServiceConnection connection = <span class="keyword">new</span> ServiceConnection() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceConnected</span><span class="params">(ComponentName name, IBinder service)</span> </span>&#123;</span><br><span class="line">        userManager = IUserManager.Stub.asInterface(service);</span><br><span class="line">        <span class="comment">//  设置死亡代理</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            service.linkToDeath(deathRecipient, <span class="number">0</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">            Log.i(<span class="string">"TAG"</span>, <span class="string">"RemoteException"</span>);</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>也可以通过isBinderAlive判断Binder是否死亡：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">userManager.asBinder().isBinderAlive();</span><br></pre></td></tr></table></figure>
+
+
+
+<p>以上仅针对Java层进行的分析，源码分析原理还需要继续努力！</p>
+<p>推荐资料：</p>
+<p><a href="http://maoao530.github.io/2016/12/21/android-binder-01/" target="_blank" rel="noopener">http://maoao530.github.io/2016/12/21/android-binder-01/</a></p>
+<p><a href="https://blog.csdn.net/u011240877/article/details/72801425" target="_blank" rel="noopener">https://blog.csdn.net/u011240877/article/details/72801425</a></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-Android基础总结系列：Binder-AIDL的使用" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -349,445 +1719,10 @@
 
 
   
-    <article id="post-Android基础总结系列：Android-IPC-简介" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/">Android基础总结系列：Android IPC 简介</a>
-    </h1>
-  
-
-        
-        <a href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/" class="archive-article-date">
-  	<time datetime="2017-08-20T14:50:41.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-20</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="1-Android-IPC-简介"><a href="#1-Android-IPC-简介" class="headerlink" title="1. Android IPC 简介"></a>1. Android IPC 简介</h3><p>IPC是Inter-Process Communication 的缩写，意为进程间通讯或跨进程通信，指两个进程之间进行数据交换的过程。一个进程可以包含多个线程，最简单的情况下，一个进程可以只有一个线程，即主线程（Android的UI线程）。</p>
-<p>IPC机制并不是Android独有的，任何一个操作系统都需要有相应的IPC机制，比如Windows上可以通过剪贴板、管道和邮槽等来进行进程间通信；Linux上可以通过命名管道、共享内容、信号量等来进行进行进程间通信。Android中最具特色的通信方式就是Binder，还支持Socket，通过Socket可以实现任意两个终端之间的通信，同一个设备的两个进程也可以通过Socket实现。</p>
-<p>IPC的使用场景：只有在多进程的时候才会进行进程间通信</p>
-<ul>
-<li>一个进程需要多进程模式实现，比如有些模块由于特殊原因需要运行在单独的进程中、为了加大一个应用可使用的内存所以需要通过多线程来获取多份内存空间。</li>
-<li>当前应用需要向其他应用获取数据。</li>
-</ul>
-<h3 id="2-Android的多进程模式"><a href="#2-Android的多进程模式" class="headerlink" title="2. Android的多进程模式"></a>2. Android的多进程模式</h3><p>Android 通过给四大组件指定android:process属性，即可以开启多线程。</p>
-<h4 id="2-1-开启多线程模式"><a href="#2-1-开启多线程模式" class="headerlink" title="2.1 开启多线程模式"></a>2.1 开启多线程模式</h4><p>在Android中使用多进程只有一种方法：给四大组件在AndroidManifest中指定android:process属性，value值就是指定的进程名称，无法为一个线程或类等指定其运行时所在的进程。</p>
-<p><a href="https://github.com/gqq519/ProcessDemo/blob/master/app/src/main/AndroidManifest.xml" target="_blank" rel="noopener">Demo案例：AndroidManifest</a></p>
-<p>通过shell命令查看：adb shell ps或者adb shell ps | grep com.gqq.xxx.xxx(包名) 查看运行的进程信息：</p>
-<p><a href="http://img.bigyoung.cn:1111/image/UvJ5" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/21/baf183601559e6a210acc09822a652e0.jpg" alt="baf183601559e6a210acc09822a652e0.jpg"></a></p>
-<p><strong>注意：</strong> android:process值：<code>:remote</code>指在当前进程名前加上当前包名，可以理解为相对名称，属于当前应用的私有进程，其他应用组件不可以和它跑在同一个进程中。不以<code>:</code>开头的，是一种完整的命名方式，此进程属于全局进程，其他应用通过ShareUID的方式可以和它跑在同一个进程中。</p>
-<p>Android系统会为每个应用分配一个唯一的UID，具有相同UID的应用才能共享数据，如果两个应用通过ShareUID跑在同一个线程中，需要应用有相同的ShareUID并且签名相同，跑在同一个线程，除了共享data目录、组件信息，还可以共享内存数据。相当于一个应用的两部分。</p>
-<h4 id="2-2-多进程模式的运行机制"><a href="#2-2-多进程模式的运行机制" class="headerlink" title="2.2 多进程模式的运行机制"></a>2.2 多进程模式的运行机制</h4><p>Android 为每一个应用分配一个独立的虚拟机，不同的虚拟机在内存分配上有不同的地址空间，导致在不同的虚拟机上访问同一个类的对象会产生多个副本。比如不同进程对静态变量等的修改，不会影响其他进程，那么运行在不同进程的四大组件通过内存共享数据，就会共享失败。<br>总体，多进程会带来的几方面的问题：</p>
-<ol>
-<li>静态成员和单例模式完全失效</li>
-<li>线程同步机制完全失效<br>不在一块内存，不同进程锁的不是同一个对象。</li>
-<li>SharePreference的可靠性下降<br>SharePreference的底层实现时通过读/写XML文件来实现的，并发读/写都有可能出现问题，所以不支持两个进程同时执行读写操作，否则会导致一定几率的数据丢失。</li>
-<li>Application会多次创建<br>创建一个进程会创建一个虚拟机，也就是启动一个应用，自然会创建新的Application。运行在同一个进程中的组件属于同一个虚拟机和同一个Application以及分配同一块内存。</li>
-</ol>
-<p><a href="https://github.com/gqq519/ProcessDemo/" target="_blank" rel="noopener">Demo案例</a><br>​<br>通过跨进程通信，可以实现数据交互，实现跨进程通讯的方法：</p>
-<ol>
-<li>Intent传递数据</li>
-<li>共享文件和SharePreference</li>
-<li>基于Binder的Messager和AIDL</li>
-<li>Socket</li>
-</ol>
-<h3 id="3-IPC-基本概念介绍"><a href="#3-IPC-基本概念介绍" class="headerlink" title="3. IPC 基本概念介绍"></a>3. IPC 基本概念介绍</h3><p>主要三个概念，帮助更好的理解进程间通信。</p>
-<ul>
-<li>Serializable 接口</li>
-<li>Parcelable 接口</li>
-<li>Binder</li>
-</ul>
-<p>Serializable 和 Parcelable接口可以完成对象的序列化，用于通过Intent和Binder传递数据，需要把对象持久化到存储设备上或通过网络传输给其他客户端，可需要通过Serializable完成对象的持久化。</p>
-<h4 id="3-1-Serializable-接口"><a href="#3-1-Serializable-接口" class="headerlink" title="3.1 Serializable 接口"></a>3.1 Serializable 接口</h4><p><a href="https://github.com/gqq519/ProcessDemo" target="_blank" rel="noopener">参考Demo</a></p>
-<p>Serializable是java的一个序列化的空接口，提供标准的序列化和反序列化操作，序列化的类需要实现Serializable接口及声明serialVersionUID，而serialVersionUID不是必需的，但是会影响反序列化的结果。serialVersionUID是静态成员变量，不参与序列化过程。反序列化时serialVersionUID与序列化时的serialVersionUID一致，则可以正常序列化。不指定serialVersionUID，如果反序列化时当前类发生了变化，比如增删了某些成员变量，会重新计算当前类hash值并赋与serialVersionUID，导致与序列化时的serialVersionUID不一样，会造成反序列化失败。指定serialVersionUID会在极大程度上避免反序列化的失败，但是如果类发生了结构性的变化，比如类名和成员变量的类型等，还是会反序列化失败，因为无法还原新结构的对象。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 序列化过程</span></span><br><span class="line">User user = <span class="keyword">new</span> User(<span class="number">1</span>, <span class="string">"gqq"</span>, <span class="keyword">false</span>);</span><br><span class="line">ObjectOutputStream out = ObjectOutputStream(<span class="keyword">new</span> FileOutputStream(file));</span><br><span class="line">out.writeObject();</span><br><span class="line">out.close();</span><br><span class="line"><span class="comment">// 反序列化过程</span></span><br><span class="line">ObjectInputStream in = ObjectInputStream(<span class="keyword">new</span> FileInputStream(file));</span><br><span class="line">User user = in.readObject();</span><br><span class="line">in.close();</span><br></pre></td></tr></table></figure>
-
-<p><strong>注意：</strong>静态成员变量属于类不属于对象，不参与序列化；用transient关键字标记的成员变量不参与序列化。</p>
-<p>继承自Serializable的默认序列化过程是可以改变的，可以重写系统的序列化<code>writeObject()</code>和反序列化方法<code>readObject()</code>。</p>
-<h4 id="3-2-Parcelable接口"><a href="#3-2-Parcelable接口" class="headerlink" title="3.2 Parcelable接口"></a>3.2 Parcelable接口</h4><p>Parcelable 是Android提供的一种序列化接口，接口需要实现序列化、反序列化、内容描述。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">public class UserModelParcel implements Parcelable&#123;</span><br><span class="line"></span><br><span class="line">    private int userId;</span><br><span class="line">    private String userName;</span><br><span class="line">    private boolean isMale;</span><br><span class="line">    private UserParcel userParcel;</span><br><span class="line"></span><br><span class="line">	 &#x2F;&#x2F; 反序列化方法</span><br><span class="line">    protected UserModelParcel(Parcel in) &#123;</span><br><span class="line">        userId &#x3D; in.readInt();</span><br><span class="line">        userName &#x3D; in.readString();</span><br><span class="line">        isMale &#x3D; in.readByte() !&#x3D; 0;</span><br><span class="line">        userParcel &#x3D; in.readParcelable(UserParcel.class.getClassLoader());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public UserModelParcel(int userId, String userName, boolean isMale, UserParcel userParcel) &#123;</span><br><span class="line">        this.userId &#x3D; userId;</span><br><span class="line">        this.userName &#x3D; userName;</span><br><span class="line">        this.isMale &#x3D; isMale;</span><br><span class="line">        this.userParcel &#x3D; userParcel;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 序列化</span><br><span class="line">    @Override</span><br><span class="line">    public void writeToParcel(Parcel dest, int flags) &#123;</span><br><span class="line">        dest.writeInt(userId);</span><br><span class="line">        dest.writeString(userName);</span><br><span class="line">        dest.writeByte((byte) (isMale ? 1 : 0));</span><br><span class="line">        dest.writeParcelable(userParcel, flags);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 内容描述</span><br><span class="line">    @Override</span><br><span class="line">    public int describeContents() &#123;</span><br><span class="line">        return 0;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 反序列化</span><br><span class="line">    public static final Creator&lt;UserModelParcel&gt; CREATOR &#x3D; new Creator&lt;UserModelParcel&gt;() &#123;</span><br><span class="line">        @Override</span><br><span class="line">        public UserModelParcel createFromParcel(Parcel in) &#123;</span><br><span class="line">            return new UserModelParcel(in);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public UserModelParcel[] newArray(int size) &#123;</span><br><span class="line">            return new UserModelParcel[size];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
-
-<p><strong>总结：</strong> Serializable 是java的序列化接口，使用简单但是开销比较大，序列化和反序列化都涉及到大量的I/O操作，效率相对较低。Parcelable是Android提供的序列化方法，更适用于Android平台，效率很高，但是使用起来比较麻烦。Parcelable主要用在内存序列化上，序列化存储设备或将序列化后的对象通过网络传输建议使用Serializable。</p>
-<p>再贴一遍<br><a href="https://github.com/gqq519/ProcessDemo" target="_blank" rel="noopener">参考 Demo</a></p>
-<h3 id="4-Binder连接池"><a href="#4-Binder连接池" class="headerlink" title="4. Binder连接池"></a>4. Binder连接池</h3><p>Binder连接池的作用是把每一个模块的Binder请求统一发送到远程Service中，避免Service重建。</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-Android基础总结系列：Android-生命周期与启动模式" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/">Android基础总结系列：Android 生命周期与启动模式</a>
-    </h1>
-  
-
-        
-        <a href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/" class="archive-article-date">
-  	<time datetime="2017-08-18T13:30:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-18</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="Android-生命周期与启动模式"><a href="#Android-生命周期与启动模式" class="headerlink" title="Android 生命周期与启动模式"></a>Android 生命周期与启动模式</h1><h2 id="1-1-Android-生命周期"><a href="#1-1-Android-生命周期" class="headerlink" title="1.1 Android 生命周期"></a>1.1 Android 生命周期</h2><p>生命周期分为两部分：一部分是典型(正常)的生命周期，用户参与下所经历的生命周期，比如手动启动Activity和销毁Activity。另一部分是异常情况下的生命周期，比如Activity被系统回收或设备Configuration发生变化导致的Activity被销毁重建。</p>
-<h4 id="1-1-1-典型情况的生命周期"><a href="#1-1-1-典型情况的生命周期" class="headerlink" title="1.1.1 典型情况的生命周期"></a>1.1.1 典型情况的生命周期</h4><p><img src="http://img.bigyoung.cn:1111/images/2020/04/28/ee41e7a858e6b449c0da2e86a6966178.jpg" alt="ee41e7a858e6b449c0da2e86a6966178.jpg"></p>
-<p><strong>说明：</strong></p>
-<ol>
-<li><p>第一次启动某一个Activity回调：onCreate-&gt;onStart-&gt;onResume;</p>
-</li>
-<li><p>back键退出当前Activity回调：onPause-&gt;onStop-&gt;onDestory;</p>
-</li>
-<li><p>home键或打开新的Activity回调：onPause-&gt;onStop,如果Activity采用透明主题，则不会调用onStop。</p>
-</li>
-<li><p>再次回到原Activity回调：onRestart-&gt;onStart-&gt;onResume;</p>
-</li>
-<li><p>打开新的Activity回调：A:onPause-&gt; B:onCreate-&gt; B:onStart-&gt; B:onResume-&gt; A:onStop</p>
-<p><strong>说明：</strong>旧的Activity的onPause先调用，然后新的Activity才启动，所以在onPause中要避免做重量级操作，在官方文档中有体现：<br><a href="http://img.bigyoung.cn:1111/image/Ux79" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/21/befbbb0ab6093ea8466715489e70a3a5.jpg" alt="befbbb0ab6093ea8466715489e70a3a5.jpg"></a></p>
-</li>
-</ol>
-<h4 id="1-1-2-异常情况下的生命周期分析"><a href="#1-1-2-异常情况下的生命周期分析" class="headerlink" title="1.1.2 异常情况下的生命周期分析"></a>1.1.2 异常情况下的生命周期分析</h4><p><strong>1. 资源相关的系统配置发生改变导致Activity被杀死</strong></p>
-<p>旋转屏幕等会导致系统配置发生变化，默认情况下，Activity会被销毁并且重新创建，也可以人为的阻止系统重建。<br>在默认情况下，不对Activity做任何处理，那么系统变化后，会被销毁和重建：生命周期如下：</p>
-<p><a href="http://img.bigyoung.cn:1111/image/UD8o" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/21/b7896ac944cab3dd6ad0a92f6e6afc67.jpg" alt="b7896ac944cab3dd6ad0a92f6e6afc67.jpg"></a></p>
-<p>只有在异常情况下（在home或启动其他Activity的时候也会单独调用onSaveInstanceState），Activity会在onStop之前调用onSaveInstanceState，与onPause无特定顺序，当Activity被重新创建的时候，系统会在onStart之后调用onRestoreInstanceState,并把Activity销毁时保存的bundle数据作为参数传给onRestoreInstanceState。</p>
-<p>关于数据保存和恢复，Activity调用onSaveInstanceState保存数据－－&gt; Activity委托Window保存数据－－&gt; Window委托顶级容器(ViewGroup，可能是DecorView)保存数据－－&gt; ViewGroup通知子元素保存数据。<strong>这是一种典型的委托模式，典型的委托模式还有<code>View绘制过程</code>、<code>事件分发</code>等。</strong></p>
-<p>上面被销毁并进行了重建，那什么情况下不会被重建呢？<br>如果不想被重建，那么可以给Activity指定configChange属性：比如<code>android:configChanges=”orientation”</code>屏幕旋转的时候不会进行重建，也不会调用onSaveInstanceState和onRestoreInstanceState，而是调用<code>onConfigurationChanged</code>方法。<br>配置常见的有三种：<strong>locale、orientation、keyboardHidden</strong>。</p>
-<p><strong>2. 资源内存不足导致优先级低的Activity被杀死</strong></p>
-<p>Activity优先级从高到低：</p>
-<ol>
-<li>前台Activity－－正在与用户进行交互的Activity优先级最高。</li>
-<li>可见但非前台Activity－－弹出对话框等导致的Activity可见但无法交互。</li>
-<li>后台Activity－－已经被暂停的Activity，比如执行了onStop(切在后台)，优先级最低。</li>
-</ol>
-<h2 id="1-2-Activity的启动模式"><a href="#1-2-Activity的启动模式" class="headerlink" title="1.2 Activity的启动模式"></a>1.2 Activity的启动模式</h2><h4 id="1-2-1-Activity的LuncherMode"><a href="#1-2-1-Activity的LuncherMode" class="headerlink" title="1.2.1 Activity的LuncherMode"></a>1.2.1 Activity的LuncherMode</h4><ol>
-<li><strong>standard：</strong> 标准、默认模式，不管在栈中是否存在，都会创建Activity实例在启动它的Activity所在的栈中。需要注意：创建的实例默认会在启动它的Activity所在的栈中，那么，非Activity的Context（ApplicationContext）并不存在所谓的任务栈，所以会报错，解决方法就是为待启动Activity指定FLAG_ACTIVITY_NEW_TASK标志位，启动的时候为其创建一个任务栈，而添加了FLAG_ACTIVITY_NEW_TASK的Flag，实际就变成了以singleTask模式启动。后面会说到Flag。</li>
-<li><strong>singleTop：</strong> 栈顶复用模式，如果新的Activity在栈顶，则不会创建，同时回调onNewIntent,onCreate、onStart不会被回调，因为Activity没有创建。</li>
-<li><strong>singleTask：</strong> 栈内复用模式，单实例模式，只要Activity在一个栈中存在，那多次启动都不会创建Activity，会回调onNewIntent，同时要启动的Activity之上的Activity全部被清除出栈，如果不存在，则重新创建一个任务栈，然后创建Activity放入栈中。</li>
-<li><strong>singleInstance：</strong> 单实例模式，加强版singleTask，此模式的Activity单独位于一个任务栈中。</li>
-</ol>
-<p><a href="https://blog.csdn.net/javazejian/article/details/52072131" target="_blank" rel="noopener">TaskAffinity的运用</a></p>
-<h4 id="1-2-2-Activity的Flags"><a href="#1-2-2-Activity的Flags" class="headerlink" title="1.2.2 Activity的Flags"></a>1.2.2 Activity的Flags</h4><p>标记位一般与启动模式相关，会影响Activity的运行状态。<br>常见的几种Flags：</p>
-<ol>
-<li><strong>FLAG_ACTIVITY_NEW_TASK：</strong> 其效果等同于为Activity指定“singleTask”的启动模式。</li>
-<li><strong>FLAG_AVCTIVITY_SINGLE_TOP：</strong> 其效果等同于为Activity设置“singleTop”的启动模式。</li>
-<li><strong>FLAG_ACTIVITY_CLEAR_TOP：</strong> 清除同一任务栈中位于它上面的Activity，一般与FLAG_ACTIVITY_NEW_TASK配合使用，被启动的Activity如果已存在，那么就会调用onNewIntent方法，如果被启动的Activity使用standard模式，那它连同他之上的都要出栈，会重新创建实例，放入栈顶。</li>
-<li><strong>FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS：</strong> 具有此标记位的Activity不会出现在历史Activity列表中(Android 多任务管理器查看的时候不会显示)，等同于xml中指定Activity属性为：android:excludeFromRecents=”true”;</li>
-</ol>
-<p>官方文档：<a href="https://developer.android.com/reference/android/content/Intent.html#FLAG_ACTIVITY_CLEAR_TASK" target="_blank" rel="noopener">Intent－Flags</a></p>
-<h2 id="1-3-IntentFilter的匹配规则"><a href="#1-3-IntentFilter的匹配规则" class="headerlink" title="1.3 IntentFilter的匹配规则"></a>1.3 IntentFilter的匹配规则</h2><p>启动Activity分为两种：显式调用和隐式调用。显式调用明确指定被启动对象的组件信息，包括类名和包名。隐式调用根据过滤信息进行匹配，同时使用隐式和显式时，以显式为主。匹配的信息：action、category、data，可以有多组intent-filter,只有同时匹配一组才能启动目标Activity。</p>
-<ol>
-<li><strong>action：</strong>action的字符串完全一致才算匹配成功，区分大小写，一组intent-filter可以有多个action，匹配一个就算成功。</li>
-<li><strong>category：</strong>category是一个字符串，系统预定义了一些category，Intent可以没有category，如果有，不管几个，都必须和intent-filter过滤规则中的category匹配。不设置可以匹配是因为在startActivity或startActivityForResult的时候会默认添加“android.intent.category.DEFAULT”这个category。</li>
-<li><strong>data：</strong>data的匹配规则与action类似，data由两部分组成：mimeType和URI。mimeType指媒体类型，比如image/jepg、audio/mpeg4-generic和video/*等，可以表示图片文本视频等不同媒体类型，而URI包含的数据比较多，大致结构：</li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;scheme&gt;:&#x2F;&#x2F;&lt;host&gt;:&lt;port&gt;&#x2F;[&lt;path&gt;|&lt;pathPrefix&gt;|&lt;pathPattern&gt;]</span><br></pre></td></tr></table></figure>
-
-<p>结合实例：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">content:&#x2F;&#x2F;com.example.project:200&#x2F;folder&#x2F;subfolder&#x2F;etc</span><br><span class="line">http:&#x2F;&#x2F;www.baidu.com:80&#x2F;search&#x2F;info</span><br></pre></td></tr></table></figure>
-
-<p><strong>Scheme：</strong>URI的模式，比如http、file，没有指定，其他参数无效，URI无效。<br><strong>Host：</strong>URI的主机，比如<a href="http://www.baidu.com，未指定，其他参数无效，URI无效。" target="_blank" rel="noopener">www.baidu.com，未指定，其他参数无效，URI无效。</a><br><strong>Port：</strong>URI中的端口号，比如80，指定了Scheme和Host，Port才有效。<br><strong>Path、pathPattern、pathPrefix：</strong>表示路径信息，path、pathPattern表示完整路径，可以包含通配符“*”，表示0或多个任意字符，pathPrefix表示路径的前缀信息。</p>
-<p>例子：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;data android:scheme&#x3D;&quot;string&quot;</span><br><span class="line">    android:host&#x3D;&quot;string&quot;</span><br><span class="line">    android:port&#x3D;&quot;string&quot;</span><br><span class="line">    android:path&#x3D;&quot;string&quot;</span><br><span class="line">    android:pathPattern&#x3D;&quot;string&quot;</span><br><span class="line">    android:pathPrefix&#x3D;&quot;string&quot;</span><br><span class="line">    android:mimeType&#x3D;&quot;string&quot;&#x2F;&gt;</span><br></pre></td></tr></table></figure>
-
-<p><strong>隐式意图注意内容：</strong></p>
-<p>通过隐式意图启动Activity的时候，可以做一下判断，看是否有 Activity匹配到隐式意图，不做判断，匹配不到可能会出现ActivityNotFoundException异常，判断的方式：<code>PackageManager的resolveActivity</code>或着<code>Intent的resolveActivity</code>,另外PackageManager提供了queryIntentActivities方法，返回值是所有匹配的Activity信息。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">public abstract List&lt;ResolveInfo&gt; queryIntentActivities(Intent intent,@ResolveInfoFlags int flags);</span><br><span class="line">public abstract ResolveInfo resolveActivity(Intent intent, @ResolveInfoFlags int flags);</span><br></pre></td></tr></table></figure>
-
-<p>需要注意的是，第二个参数使用<code>MATCH_DEFAULT_ONLY</code> 仅仅匹配在intent-filter中声明了android.intent.category.DEFAULT的category的Activity，意义在于，只要不返回null，那么startActivity一定会成功。</p>
-<p>还有一类action和category比较重要：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;action android:name&#x3D;&quot;android.intent.action.MAIN&quot; &#x2F;&gt;</span><br><span class="line">&lt;category android:name&#x3D;&quot;android.intent.category.LAUNCHER&quot; &#x2F;&gt;</span><br></pre></td></tr></table></figure>
-
-<p>二者共同作用，表明这是程序入口的Activity并且出现在系统应用列表中，二者缺一不可。</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-onCreate中view获取宽高的方法-md" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/">onCreate中view获取宽高的方法.md</a>
-    </h1>
-  
-
-        
-        <a href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/" class="archive-article-date">
-  	<time datetime="2017-07-24T13:06:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-07-24</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>在onCreate方法中无法获取到view具体的宽高，但有时候我们需要拿到某控件的宽高进行计算，比较实用的可以通过几种方式：</p>
-<h4 id="1-view-getViewTreeObserver-addOnGlobalLayoutListener"><a href="#1-view-getViewTreeObserver-addOnGlobalLayoutListener" class="headerlink" title="1.view.getViewTreeObserver().addOnGlobalLayoutListener()"></a>1.view.getViewTreeObserver().addOnGlobalLayoutListener()</h4><p>通过View的层次观察者注册全局监听，当view的布局状态、可见性等发生变化时会触发，所以可能会被调用多次，仅用其获取view宽高时，获取到之后需要移除监听。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">textView.getViewTreeObserver().addOnGlobalLayoutListener(<span class="keyword">new</span> ViewTreeObserver.OnGlobalLayoutListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onGlobalLayout</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnGlobalLayoutListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.getViewTreeObserver().removeOnGlobalLayoutListener(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-view-post"><a href="#2-view-post" class="headerlink" title="2. view.post()"></a>2. view.post()</h4><p>Runnable 操作只有在 View 的 <strong>attachedToWindow</strong> 到 <strong>detachedFromWiondow</strong> 这期间才会被执行，所以可以通过此方法获取view的宽高。推荐使用。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">textView.post(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"View post:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<h4 id="3-view-addOnLayoutChangeListener"><a href="#3-view-addOnLayoutChangeListener" class="headerlink" title="3. view.addOnLayoutChangeListener()"></a>3. view.addOnLayoutChangeListener()</h4><p>当布局边界发生变化时，会触发此监听，所以可以通过此监听获取到view的宽高，但可能会多次触发，因此在获取到宽高之后要移除监听。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">textView.addOnLayoutChangeListener(<span class="keyword">new</span> View.OnLayoutChangeListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onLayoutChange</span><span class="params">(View v, <span class="keyword">int</span> left, <span class="keyword">int</span> top, <span class="keyword">int</span> right, <span class="keyword">int</span> bottom, <span class="keyword">int</span> oldLeft, <span class="keyword">int</span> oldTop, <span class="keyword">int</span> oldRight, <span class="keyword">int</span> oldBottom)</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnLayoutChangeListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.removeOnLayoutChangeListener(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<h4 id="4-view-getViewTreeObserver-addOnPreDrawListener"><a href="#4-view-getViewTreeObserver-addOnPreDrawListener" class="headerlink" title="4. view.getViewTreeObserver().addOnPreDrawListener()"></a>4. view.getViewTreeObserver().addOnPreDrawListener()</h4><p>同1类似，此监听从绘制角度进行监听，可能会多次调用，所以同样，获取到宽高之后要移除监听。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">textView.getViewTreeObserver().addOnPreDrawListener(<span class="keyword">new</span> ViewTreeObserver.OnPreDrawListener() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onPreDraw</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Log.e(<span class="string">"TAG"</span>, <span class="string">"OnPreDrawListener:"</span>+ textView.getWidth()+<span class="string">","</span>+ textView.getHeight());</span><br><span class="line">        textView.getViewTreeObserver().removeOnPreDrawListener(<span class="keyword">this</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Android常见问题</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2017/07/24/onCreate%E4%B8%ADview%E8%8E%B7%E5%8F%96%E5%AE%BD%E9%AB%98%E7%9A%84%E6%96%B9%E6%B3%95-md/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-Fragment点击穿透的解决方案-md" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/04/23/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/">Fragment点击穿透的解决方案.md</a>
-    </h1>
-  
-
-        
-        <a href="/2017/04/23/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/" class="archive-article-date">
-  	<time datetime="2017-04-23T12:29:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-04-23</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="Fragment叠加出现点击穿透的解决方案"><a href="#Fragment叠加出现点击穿透的解决方案" class="headerlink" title="Fragment叠加出现点击穿透的解决方案"></a>Fragment叠加出现点击穿透的解决方案</h2><p>参考文档：<br><a href="https://blog.csdn.net/dong19870625/article/details/50550147" target="_blank" rel="noopener">https://blog.csdn.net/dong19870625/article/details/50550147</a><br><a href="https://blog.csdn.net/joye123/article/details/77075274" target="_blank" rel="noopener">https://blog.csdn.net/joye123/article/details/77075274</a></p>
-<p>Fragment在开发中很常见，经常会有Fragment叠加的需求，最近在开发中遇到一个现象，在Fragment中add 多个Fragment的时候，当最上方的Fragment点击空白处时，会发生点击穿透，下层在所点击处对应的控件的点击事件就会被触发，怎么解决呢？</p>
-<h3 id="出现问题的原因"><a href="#出现问题的原因" class="headerlink" title="出现问题的原因"></a>出现问题的原因</h3><p>原因：Fragment的本质就是一个View布局的管理器，当Fragment attach到Activity时，其实就是把Fragment#onCreateView()返回的View，替换掉(如果是用replace)FragmentTransaction#replace中指定的View，或者添加到(如果是add)FragmentTransaction#add()中指定的ViewGroup里面。<br>当我们以层叠方式显示多个Fragment时，通常的做法就是弄一个FrameLayout，然后每次把Fragment add到此布局。因此，这时Activity的页面布局树实际上就是一个FrameLayout里面包含几个View。<br>所以，当点击上面Fragment的空白区域时，如果事件没被吃掉，就会向下传递。 </p>
-<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p><strong>方式一：在根布局中添加属性android:clickable=”true”</strong></p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">LinearLayout</span></span></span><br><span class="line"><span class="tag">       <span class="attr">android:layout_width</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">android:layout_height</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">android:orientation</span>=<span class="string">"vertical"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">android:clickable</span>=<span class="string">"true"</span>/&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>或者在代码中设置：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 代码设置clickable</span></span><br><span class="line">    linearLayout.setClickable(<span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
-
-<p>缺点：需要在每一个Fragment的根布局处添加，Fragment较多的时候，工作量大。</p>
-<p><strong>方式二：创建Fragment的基类，在基类中为View添加触摸监听，并返回true</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onViewCreated</span><span class="params">(@NonNull View view, @Nullable Bundle savedInstanceState)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">super</span>.onViewCreated(view, savedInstanceState);</span><br><span class="line">      view.setOnTouchListener(<span class="keyword">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onTouch</span><span class="params">(View v, MotionEvent event)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<p>这种方式避免了多处添加clickable的麻烦，但是同时带来一个问题，如果Fragment的根布局使用的是ScrollView，那么就无法滚动了，因为触摸事件已经消费掉了，但如果根布局不是ScrollView的话，就可以用此方式。</p>
-<p><strong>方式三：在基类中为 View设置点击监听，而不是触摸监听</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onViewCreated</span><span class="params">(@NonNull View view, @Nullable Bundle savedInstanceState)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">super</span>.onViewCreated(view, savedInstanceState);</span><br><span class="line">      view.setOnClickListener(<span class="keyword">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onClick</span><span class="params">(View v)</span> </span>&#123;</span><br><span class="line">      </span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<p>此方式可以解决事件穿透，同时不影响根布局是ScrollView的情况。</p>
-<p>简单验证Demo：[<a href="https://github.com/gqq519/FragmentClickIssue]" target="_blank" rel="noopener">https://github.com/gqq519/FragmentClickIssue]</a></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Android常见问题</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2017/04/23/Fragment%E7%82%B9%E5%87%BB%E7%A9%BF%E9%80%8F%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88-md/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
+    <nav id="page-nav">
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
+    </nav>
   
 
 

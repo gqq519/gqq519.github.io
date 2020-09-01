@@ -6,17 +6,23 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://gqq519.github.io">
-  <title>Archives: 2017/8 | gqq的博客</title>
+  <title>Android基础总结系列：View的事件分发与绘制 | gqq的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一枚程序媛">
-<meta property="og:type" content="website">
-<meta property="og:title" content="gqq的博客">
-<meta property="og:url" content="https://gqq519.github.io/archives/2017/08/index.html">
+  <meta name="description" content="[TOC] View基础一些基础：  MotionEvent：触摸事件序列：ACTION_DOWN、ACTION_MOVE、ACTION_UP  TouchSlop：可以识别出的滑动最小距离;判断此时是否属于滑动事件  VelocityTracker：滑动速度  GestureDetector：手势检测，手势处理场景：双击、滑动、长按等 123456789101112131415161718192">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android基础总结系列：View的事件分发与绘制">
+<meta property="og:url" content="https://gqq519.github.io/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AView%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E4%B8%8E%E7%BB%98%E5%88%B6/index.html">
 <meta property="og:site_name" content="gqq的博客">
-<meta property="og:description" content="一枚程序媛">
+<meta property="og:description" content="[TOC] View基础一些基础：  MotionEvent：触摸事件序列：ACTION_DOWN、ACTION_MOVE、ACTION_UP  TouchSlop：可以识别出的滑动最小距离;判断此时是否属于滑动事件  VelocityTracker：滑动速度  GestureDetector：手势检测，手势处理场景：双击、滑动、长按等 123456789101112131415161718192">
 <meta property="og:locale" content="zh">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/08/26/82f19c8653fb7391a21bb55c33eee736.png">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/08/28/0a77108276c059741234ec56db3a7935.png">
+<meta property="article:published_time" content="2017-09-05T12:36:12.000Z">
+<meta property="article:modified_time" content="2020-09-01T15:42:29.837Z">
 <meta property="article:author" content="gqq519">
+<meta property="article:tag" content="Android基础">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://img.bigyoung.cn:1111/images/2020/08/26/82f19c8653fb7391a21bb55c33eee736.png">
   
     <link rel="alternative" href="/atom.xml" title="gqq的博客" type="application/atom+xml">
   
@@ -134,36 +140,112 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-Android基础总结系列：View的事件分发与绘制" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android基础总结系列：View的事件分发与绘制
+    </h1>
+  
+
+        
+        <a href="/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AView%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E4%B8%8E%E7%BB%98%E5%88%B6/" class="archive-article-date">
+  	<time datetime="2017-09-05T12:36:12.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-05</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>[TOC]</p>
+<h4 id="View基础"><a href="#View基础" class="headerlink" title="View基础"></a>View基础</h4><p>一些基础：</p>
+<ul>
+<li><p>MotionEvent：触摸事件序列：ACTION_DOWN、ACTION_MOVE、ACTION_UP</p>
+</li>
+<li><p>TouchSlop：可以识别出的滑动最小距离;判断此时是否属于滑动事件</p>
+</li>
+<li><p>VelocityTracker：滑动速度</p>
+</li>
+<li><p>GestureDetector：手势检测，手势处理场景：双击、滑动、长按等</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public boolean onTouchEvent(MotionEvent event) &#123;</span><br><span class="line">    return gestureDetector.onTouchEvent(event);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">GestureDetector gestureDetector &#x3D; new GestureDetector(this.getContext(), new GestureDetector.OnGestureListener() &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public boolean onDown(MotionEvent e) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onShowPress(MotionEvent e) &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onSingleTapUp(MotionEvent e) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onLongPress(MotionEvent e) &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实现View的滑动方式</p>
+<ul>
+<li>通过View本身提供的scrollBy/scrollTo</li>
+<li>通过动画给View添加平移效果</li>
+<li>通过改变View的LayoutParams使得View重新布局从而实现滑动</li>
+</ul>
+</li>
+<li><p>View的弹性滑动</p>
+<ul>
+<li>Scroller：本身没有实现弹性滑动，需要和View的computeScroll配合实现</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 1. 首先初始化一个对象</span><br><span class="line">private void init(Context context) &#123;</span><br><span class="line">    scroller &#x3D; new Scroller(context);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 2. 然后重写View的computeScroll方法和调用的方法</span><br><span class="line">public void smoothScrollTo(int destX, int dextY) &#123;</span><br><span class="line">    int scrollX &#x3D; getScrollX();</span><br><span class="line">    int delta &#x3D; destX - scrollX;</span><br><span class="line">    &#x2F;&#x2F;在1s内滑向delta，效果就是慢慢滑动</span><br><span class="line">    scroller.startScroll(scrollX, 0, delta, 0,1000);</span><br><span class="line">    invalidate();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public void computeScroll() &#123;</span><br><span class="line">    if (scroller.computeScrollOffset()) &#123;</span><br><span class="line">        scrollTo(scroller.getCurrX(), scroller.getCurrY());</span><br><span class="line">        postInvalidate();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 3. 调用</span><br><span class="line">private void initView() &#123;</span><br><span class="line">    final MyButton button &#x3D; findViewById(R.id.button);</span><br><span class="line">    linearLayout &#x3D; findViewById(R.id.lin);</span><br><span class="line"></span><br><span class="line">    button.setOnClickListener(new View.OnClickListener() &#123;</span><br><span class="line">        @Override</span><br><span class="line">        public void onClick(View v) &#123;</span><br><span class="line">            linearLayout.smoothScrollTo(-500,0);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">流程：首先通过Scroller类的startScroll()+invalidate()触发View的computeScroll()，在computeScroll()中让Scroller类去计算最新的坐标信息，拿到最新的坐标偏移信息后还是要调用View的scrollTo来实现滑动</span><br></pre></td></tr></table></figure>
+
+<p><strong>Scroller工作机制：</strong> Scroller本身并不能实现View的滑动，他需要配合View的computeScroll方法，他不断的让View重绘，每一次重绘就会根据时间间隔，算出当前的位置，然后通过scrollTo进行滑动，这样每一次重绘都会移动一小点距离，多次小幅度移动就组成了弹性滑动。</p>
+<ul>
+<li>通过插值器动画</li>
+<li>使用延时策略</li>
+</ul>
+</li>
+</ul>
+<h4 id="View的事件分发"><a href="#View的事件分发" class="headerlink" title="View的事件分发"></a>View的事件分发</h4><p>View的事件分发主要涉及三个方法：</p>
+<ul>
+<li>dispatchTouchEvent：主要负责View事件的分发，返回值收到当前View的onTouchEvent事件返回值和下级View的dispatchTouchEvent的影响。</li>
+<li>onInterceptTouchEvent：内部调用，用于判断是否拦截当前事件。</li>
+<li>onTouchEvent：用来处理点击事件，返回值表示是否消费当前事件。</li>
+</ul>
+<p>伪代码表示三者的关系：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public boolean dispatchTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">    boolean consume &#x3D; false;</span><br><span class="line">    if (onInterceptTouchEvent(ev)) &#123;</span><br><span class="line">        consume &#x3D; onTouchEvent(ev);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        consume &#x3D; child.dispatchTouchEvent();</span><br><span class="line">    &#125;</span><br><span class="line">    return consume;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>具体流程参考下图：</strong></p>
+<p><a href="http://img.bigyoung.cn:1111/image/UaWH" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/26/82f19c8653fb7391a21bb55c33eee736.png" alt="82f19c8653fb7391a21bb55c33eee736.png"></a></p>
+<h5 id="事件分发常见的问题集合"><a href="#事件分发常见的问题集合" class="headerlink" title="事件分发常见的问题集合"></a>事件分发常见的问题集合</h5><ol>
+<li><p>事件分发的主要流程？</p>
+<p>用户从触摸屏幕至离开会产生一系列的事件，down-move-move……move-up，Android会将一个事件包装成MotionEvent，从Activity#dispatchTouchEvent开始分发，activity-&gt;window-&gt;decorView-&gt;viewGroup-&gt;View，主要涉及到几个方法：</p>
+<ul>
+<li>dispatchTouchEvent：用于事件的分发，所有的事件都必须经过这个方法的分发，然后决定是自身消费还是往下分发，true表示不继续分发，false继续往下分发，如果是ViewGroup则调用onInterceptTouchEvent进行判断是否拦截该事件</li>
+<li>onInterceptTouchEvent：ViewGroup方法，用于判断是否拦截事件</li>
+<li>onTouchEvent：事件消费是否消费</li>
+</ul>
+</li>
+<li><p>子View在消费掉Down事件后，后续的事件都会传递给它，怎么实现的？</p>
+<p>ViewGroup中有一个mFirstTouchTarget成员变量用于保存消费事件的子View的信息，因为Android是支持多指操作的，所以mFirstTouchTarget是一个TouchTarget的链表，View的dispatchTouchEvent有三个阶段：判断是否拦截；找到消费的View，更新mFirstTouchTarget；根据是否拦截和mFirstTouchEvent再次分发事件</p>
+</li>
+<li><p>CANCEL事件什么时候触发？</p>
+<p>Down事件父View不拦截，后续的事件父View重新拦截的时候，会将拦截事件改为CANCEL事件分发给子View</p>
+</li>
+<li><p>requestDisallowInterceptTouchEvent方法的作用？</p>
+<p>干预父View的事件分发，比如在接收到Down事件后调用该方法阻止viewGroup拦截事件，但是如果ViewGroup从Down事件就拦截了，那么子view调用会无效，因为不是Down事件并且mFirstTouchEvent为null，那么viewGroup就直接拦截分发了</p>
+</li>
+<li><p>DOWN事件被子View消费了，ViewGroup是否可以拦截后续的事件，如果拦截了，当前这个事件viewGroup能消费吗？子View还会收到事件吗？</p>
+<p>可以拦截，拦截后当前事件会被改为CANCEL事件分发给子View，该事件就不能被viewGroup消费了。所以可以拦截后续事件，不能消费，子View会收到CANCEL事件。</p>
+</li>
+<li><p>当View Disable时，会消费事件吗？</p>
+<p>可以消费，但是不会有任何的反应。只要clickable、long_clickable或者context_clickable其中一个为true的话，就会对事件进行消费。</p>
+</li>
+<li><p>onTouchListener、onClickListener的优先级？</p>
+<p>View需要处理事件时，如果设置了OnTouchListener，OnTouchLisener的onTouch方法会被回调，返回false则View的onTouchEvent被调用，true，onTouchEvent不会被调用，可见OnTouchListener优先级高于onTouchEvent，在onTouchEvent回调中，如果设置了OnClickListener，则onClick会被回调，所以优先级：OnTouchListener &gt; onTouchEvent &gt; OnClickListener</p>
+</li>
+</ol>
+<h4 id="View的绘制流程"><a href="#View的绘制流程" class="headerlink" title="View的绘制流程"></a>View的绘制流程</h4><p>View的绘制主要涉及三个方法：</p>
+<ul>
+<li>measure: 测量，根据xml和代码测量ViewGroup和View的大小</li>
+<li>layout：布局，根据测量结果及布局参数确定显示的位置</li>
+<li>draw：绘制。</li>
+</ul>
+<p><img src="http://img.bigyoung.cn:1111/images/2020/08/28/0a77108276c059741234ec56db3a7935.png" alt="0a77108276c059741234ec56db3a7935.png"></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2017" class="archive-year">2017</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/" class="archive-article-date">
-  	<time datetime="2017-08-29T13:30:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-29</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/">Android基础总结系列：Binder上层原理浅析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -175,133 +257,64 @@
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/24/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder-AIDL%E7%9A%84%E4%BD%BF%E7%94%A8/" class="archive-article-date">
-  	<time datetime="2017-08-24T14:32:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-24</time>
-</a>
+<nav id="article-nav">
+  
+    <a href="/2017/09/05/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid%E5%8A%A8%E7%94%BB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          Android基础总结系列：Android动画
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2017/09/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E7%9A%84IPC%E6%96%B9%E5%BC%8F/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Android基础总结系列：Binder的IPC方式</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/24/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder-AIDL%E7%9A%84%E4%BD%BF%E7%94%A8/">Android基础总结系列：Binder AIDL的使用</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/" class="archive-article-date">
-  	<time datetime="2017-08-20T14:50:41.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-20</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/">Android基础总结系列：Android IPC 简介</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/" class="archive-article-date">
-  	<time datetime="2017-08-18T13:30:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-18</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/">Android基础总结系列：Android 生命周期与启动模式</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
   
-  
-    </div></section>
-  
-
-    
 
 
           </div>
@@ -324,8 +337,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,
