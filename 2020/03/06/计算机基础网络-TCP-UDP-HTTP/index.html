@@ -6,17 +6,25 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://gqq519.github.io">
-  <title>Archives: 2017/8 | gqq的博客</title>
+  <title>计算机基础网络:TCP/UDP/HTTP | gqq的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一枚程序媛">
-<meta property="og:type" content="website">
-<meta property="og:title" content="gqq的博客">
-<meta property="og:url" content="https://gqq519.github.io/archives/2017/08/index.html">
+  <meta name="description" content="计算机网络相关总结OSI七层模型 12345677. 应用层：用户及程序和网络之间的接口，各种应用程序协议：HTTP、FTP、6. 表示层：处理用户信息的表示问题，比如：编码、格式转换、解加密、解压缩等5. 会话层：组织和协调两个会话进程之间的，并对数据交换进行管理。4. 传输层：承上启下，负责节点间的数据传输。---TCP、UDP3. 网络层：控制子网运行，比如逻辑编址、分组传输、路由选择2.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="计算机基础网络:TCP&#x2F;UDP&#x2F;HTTP">
+<meta property="og:url" content="https://gqq519.github.io/2020/03/06/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E7%BD%91%E7%BB%9C-TCP-UDP-HTTP/index.html">
 <meta property="og:site_name" content="gqq的博客">
-<meta property="og:description" content="一枚程序媛">
+<meta property="og:description" content="计算机网络相关总结OSI七层模型 12345677. 应用层：用户及程序和网络之间的接口，各种应用程序协议：HTTP、FTP、6. 表示层：处理用户信息的表示问题，比如：编码、格式转换、解加密、解压缩等5. 会话层：组织和协调两个会话进程之间的，并对数据交换进行管理。4. 传输层：承上启下，负责节点间的数据传输。---TCP、UDP3. 网络层：控制子网运行，比如逻辑编址、分组传输、路由选择2.">
 <meta property="og:locale" content="zh">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/04/28/8850259607498029fb61d2027c17c67b.gif">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/04/30/cd85095d8d993c98dca916b427948077.png">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/04/30/d2653ac0bc6310de747ad2870a0b4024.png">
+<meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/04/30/8ce5cea3c7971af4441e11e86fefb80c.png">
+<meta property="article:published_time" content="2020-03-06T14:45:35.000Z">
+<meta property="article:modified_time" content="2020-09-06T15:46:24.875Z">
 <meta property="article:author" content="gqq519">
+<meta property="article:tag" content="计算机基础">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://img.bigyoung.cn:1111/images/2020/04/28/8850259607498029fb61d2027c17c67b.gif">
   
     <link rel="alternative" href="/atom.xml" title="gqq的博客" type="application/atom+xml">
   
@@ -134,174 +142,188 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-计算机基础网络-TCP-UDP-HTTP" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      计算机基础网络:TCP/UDP/HTTP
+    </h1>
+  
+
+        
+        <a href="/2020/03/06/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80%E7%BD%91%E7%BB%9C-TCP-UDP-HTTP/" class="archive-article-date">
+  	<time datetime="2020-03-06T14:45:35.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-06</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="计算机网络相关总结"><a href="#计算机网络相关总结" class="headerlink" title="计算机网络相关总结"></a>计算机网络相关总结</h4><p><strong>OSI七层模型</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">7. 应用层：用户及程序和网络之间的接口，各种应用程序协议：HTTP、FTP、</span><br><span class="line">6. 表示层：处理用户信息的表示问题，比如：编码、格式转换、解加密、解压缩等</span><br><span class="line">5. 会话层：组织和协调两个会话进程之间的，并对数据交换进行管理。</span><br><span class="line">4. 传输层：承上启下，负责节点间的数据传输。---TCP、UDP</span><br><span class="line">3. 网络层：控制子网运行，比如逻辑编址、分组传输、路由选择</span><br><span class="line">2. 数据链路层：物理寻址，原始比特流转换为逻辑传输线路</span><br><span class="line">1. 物理层：通信信道的原始比特流数据</span><br></pre></td></tr></table></figure>
+
+<p><a href="http://img.bigyoung.cn:1111/image/FUTw" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/04/28/8850259607498029fb61d2027c17c67b.gif" alt="8850259607498029fb61d2027c17c67b.gif"></a></p>
+<h4 id="HTTP相关"><a href="#HTTP相关" class="headerlink" title="HTTP相关"></a>HTTP相关</h4><p>参考资料：<br><a href="https://www.cnblogs.com/ranyonsue/p/5984001.html" target="_blank" rel="noopener">https://www.cnblogs.com/ranyonsue/p/5984001.html</a></p>
+<p><a href="https://www.cnblogs.com/jpfss/p/10984966.html" target="_blank" rel="noopener">https://www.cnblogs.com/jpfss/p/10984966.html</a></p>
+<ol>
+<li><p>HTTP协议请求、响应的报文格式</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">            请求报文        </span><br><span class="line">    请求行  POST &#x2F;index.html HTTP&#x2F;1.1       请求方式 请求url HTTP协议版本</span><br><span class="line">    请求头  HOST: www.XXX.com               请求Header，可以添加多个</span><br><span class="line">            User-Agent: Firefox&#x2F;15.0      </span><br><span class="line">    空行                                    空行，标志header已添加完，区分请求体</span><br><span class="line">    请求体  Username&#x3D;admin                  请求体，请求需要的数据，GET请求没有请请求体</span><br><span class="line"></span><br><span class="line">            响应报文</span><br><span class="line">    响应行  HTTP&#x2F;1.1 200 OK                 HTTP协议版本 响应码 响应状态</span><br><span class="line">    响应头  Content-Encoding: gzip          响应header</span><br><span class="line">            Content-Type: text&#x2F;html</span><br><span class="line">    空行                                    空行，区分header和响应体</span><br><span class="line">    响应体  body                            请求返回的数据，用于展示&#x2F;处理。</span><br><span class="line"></span><br><span class="line">----------------------------------------------------------------------------------------------</span><br><span class="line"></span><br><span class="line">1. 请求方式：GET、POST、HEAD、OPTIONS</span><br><span class="line">2. HTTP版本：</span><br><span class="line">3. 请求头：</span><br><span class="line">    - User-Agent：用户请求的代理软件，包括用户的操作系统，浏览器等相关属性</span><br><span class="line">    - Cookie：常用来表示请求者的身份。比如有些会话信息(SesssionId)会存在Cookie中。</span><br><span class="line">    - Accept：客户端接受什么类型的信息。类型用MIME表示。</span><br><span class="line">    - Accept-Charset：客户端接受什么字符集的文本内容。常用的如UTF-8，GBK，iso-8859-1等。</span><br><span class="line">    -......</span><br><span class="line">4. 响应码及响应状态：</span><br><span class="line">    1XX：信息提示。表示请求已被服务器接受，但需要继续处理，范围为100~101。</span><br><span class="line">    2XX：请求成功。服务器成功处理了请求。范围为200~206。</span><br><span class="line">    3XX：客户端重定向。重定向状态码用于告诉客户端浏览器，访问的资源已被移动并告诉客户端新的资源位置。客户端收到重定向会重新对新资源发起请求。范围为300~305。</span><br><span class="line">    4XX：客户端信息错误。客户端可能发送了服务器无法处理的东西，比如请求的格式错误，或者请求了一个不存在的资源。范围为400~415。</span><br><span class="line">    5XX：服务器出错。客户端发送了有效的请求，但是服务器自身出现错误，比如Web程序运行出错。范围是500~505。</span><br><span class="line">    常见的响应码：</span><br><span class="line">    - 200：客户端请求成功。</span><br><span class="line">    - 302：重定向。</span><br><span class="line">    - 404：请求资源不存在。</span><br><span class="line">    - 400：请求语法错误，服务器无法理解。</span><br><span class="line">    - 403：服务器收到请求，但拒绝提供服务。</span><br><span class="line">    - 500：服务器内部错误。</span><br><span class="line">    - 503：服务器当前不能处理客户端请求，可能需要一段时间后才能恢复正常。</span><br><span class="line">            </span><br><span class="line">参考资料：https:&#x2F;&#x2F;www.cnblogs.com&#x2F;jpfss&#x2F;p&#x2F;10984966.html</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>HTTP/1.x 与HTTP/2.x的版本有什么变化?</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">- HTTP&#x2F;1.0：</span><br><span class="line">    请求方式新增了POST，DELETE，PUT，HEAD等方式</span><br><span class="line">    增添了请求头和响应头的概念，在通信中指定了 HTTP 协议版本号，以及其他的一些元信息 (比如: 状态码、权限、缓存、内容编码)</span><br><span class="line">    扩充了传输内容格式，图片、音视频资源、二进制等都可以进行传输</span><br><span class="line">    特点：</span><br><span class="line">    无状态：服务器不跟踪不记录请求过的状态，可以借助cookie&#x2F;session机制来做身份认证和状态记录</span><br><span class="line">    无连接：浏览器每次请求都需要建立tcp连接：</span><br><span class="line">            无法复用连接每次发送请求，都需要进行一次tcp连接（即3次握手4次挥手），使得网络的利用率非常低</span><br><span class="line">            队头阻塞，HTTP 1.0 规定在前一个请求响应到达之后下一个请求才能发送，如果前一个阻塞，后面的请求也会阻塞的。</span><br><span class="line">    </span><br><span class="line">- HTTP&#x2F;1.1：</span><br><span class="line">    长连接：Connection: keep-alive，新增Connection字段，默认保持长连接，后续继续通过此通道传输</span><br><span class="line">    管道化：基于上面的长连接，管道化可以不等第一个请求响应继续发送后面的请求，但响应的顺序还是按照请求的顺序返回，并未解决队头阻塞的问题</span><br><span class="line">    缓存处理：新增字段cache-control</span><br><span class="line">    断点传输</span><br><span class="line"></span><br><span class="line">- HTTP&#x2F;2.0：</span><br><span class="line">    二进制分帧：HTTP 1.x 的解析是基于文本，HTTP 2之后将所有传输的信息分割为更小的消息和帧，并对它们采用二进制格式的编码，提高传输效率</span><br><span class="line">    多路复用： 在共享TCP链接的基础上同时发送请求和响应</span><br><span class="line">    头部压缩： HTTP 是无状态的，每一个请求都需要头部信息标识这次请求相关信息，所以会造成传输很多重复的信息，当请求数量增大的时候，消耗的资源就会慢慢积累上去。所以 HTTP 2 可以维护一个头部信息字典，差量进行更新头信息，减少头部信息传输占用的资源。</span><br><span class="line">    服务器推送：服务器可以额外的向客户端推送资源，而无需客户端明确的请求</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>HTTP与HTTPS的区别？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. http是HTTP协议运行在TCP之上，信息是明文传输，https是HTTP协议运行在SSL&#x2F;TLS之上，SSL&#x2F;TLS在TCP之上，是具有安全性的ssl的加密传输协议。</span><br><span class="line">2. http和https是不同的连接方式，端口号也不一样，http是80，https是443</span><br><span class="line">3. https是由SSL+HTTP构建的可进行加密传输、身份验证的网络协议，比http安全。</span><br><span class="line">4. https需要到CA申请证书</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>HTTPS的加密原理？</p>
+<p><a href="https://www.jianshu.com/p/cf2f86bc597a" target="_blank" rel="noopener">HTTPS的加密原理</a>    </p>
+</li>
+<li><p>如何验证证书的合法性?</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">https如何保证安全又高效？</span><br><span class="line">    - https使用非对称加密算法来交换对称加密的密钥，最后使用对称加密算法来进行通信。</span><br><span class="line">如何保证非对称加密时的安全性？</span><br><span class="line">    - 服务端发送证书来传递非对称加密的公钥。保证了公钥和私钥的保密性。</span><br><span class="line">客户端怎么知道证书是不是真的？</span><br><span class="line">    - 客户端根据CA证书的公钥校验证书的数字签名来保证其合法性。</span><br><span class="line">客户端的CA证书不会被伪造或泄露吗？</span><br><span class="line">    - CA证书是默认预装到浏览器和操作系统中的，所以CA证书的公钥是安全的。</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>https中哪里用了对称加密，哪里用了非对称加密，对加密算法（如RSA）等是否有了解?</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">非对称加密算法：RSA，DSA&#x2F;DSS</span><br><span class="line">对称加密算法：AES，RC4，3DES</span><br><span class="line">HASH算法：MD5，SHA1，SHA256</span><br><span class="line">你只要想：既然是加密，那肯定是不希望别人知道我的消息，所以只有我才能解密，所以可得出公钥负责加密，私钥负责解密；</span><br><span class="line">同理，既然是签名，那肯定是不希望有人冒充我发消息，只有我才能发布这个签名，所以可得出私钥负责签名，公钥负责验证。</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在浏览器地址栏键入URL，按下回车之后会发生什么？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1、浏览器向 DNS 服务器请求解析该 URL 中的域名所对应的 IP 地址;</span><br><span class="line">2、解析出 IP 地址后，根据该 IP 地址和默认端口 80，和服务器建立TCP连接;</span><br><span class="line">3、浏览器发出读取文件(URL 中域名后面部分对应的文件)的HTTP 请求，该请求报文作为 TCP 三次握手的第三个报文的数据发送给服务器;</span><br><span class="line">4、服务器对浏览器请求作出响应，并把对应的 html 文本发送给浏览器;</span><br><span class="line">5、释放 TCP连接;</span><br><span class="line">6、浏览器将该 html 文本并显示内容;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>http的断点续传</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">HTTP1.1协议（RFC2616）中定义了断点续传相关的HTTP头 Range和Content-Range字段，比如：</span><br><span class="line">   客户端下载一个文件被中断，请求续传，在header中增加Range:bytes&#x3D;512000(从文件的什么位置开始传输)</span><br><span class="line">   服务端接收到请求，返回的响应数据header中增加Content-Range:bytes 512000-&#x2F;1024000(传输位置&#x2F;总大小)</span><br><span class="line">   返回的响应数据的状态码206，而不是200</span><br><span class="line">   </span><br><span class="line">   存在的问题：</span><br><span class="line">   文件资源发生了变化，续传的文件就会出现错误。</span><br><span class="line">   此时我们需要有一个标识文件唯一性的方法。在RFC2616中也有相应的定义，比如实现Last-Modified来标识文件的最后修改时间，这样即可判断出续传文件时是否已经发生过改动。同时RFC2616中还定义有一个ETag的头，可以使用ETag头来放置文件的唯一标识，比如文件的MD5值。</span><br><span class="line">   终端在发起续传请求时应该在HTTP头中申明If-Match 或者If-Modified-Since 字段，帮助服务端判别文件变化。</span><br><span class="line">   另外RFC2616中同时定义有一个If-Range头，终端如果在续传是使用If-Range。If-Range中的内容可以为最初收到的ETag头或者是Last-Modfied中的最后修改时候。服务端在收到续传请求时，通过If-Range中的内容进行校验，校验一致时返回206的续传回应，不一致时服务端则返回200回应，回应的内容为新的文件的全部数据。</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>http与Socket的区别？</p>
+<p><a href="https://www.cnblogs.com/zhuleixiao/p/9218121.html" target="_blank" rel="noopener">https://www.cnblogs.com/zhuleixiao/p/9218121.html</a></p>
+</li>
+</ol>
+<h4 id="TCP-IP"><a href="#TCP-IP" class="headerlink" title="TCP/IP"></a>TCP/IP</h4><p>TCP/IP 是互联网相关的各类协议族的总称，比如：TCP，UDP，IP，FTP，HTTP，ICMP，SMTP 等都属于 TCP/IP 族内的协议。</p>
+<p>TCP/IP模型是互联网的基础，它是一系列网络协议的总称。这些协议可以划分为四层，分别为链路层、网络层、传输层和应用层。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">链路层：负责封装和解封装IP报文，发送和接受ARP&#x2F;RARP报文等。</span><br><span class="line">网络层：负责路由以及把分组报文发送给目标网络或主机。</span><br><span class="line">传输层：负责对报文进行分组和重组，并以TCP或UDP协议格式封装报文。</span><br><span class="line">应用层：负责向用户提供应用程序，比如HTTP、FTP、Telnet、DNS、SMTP等。</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p>TCP和UDP的区别？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">TCP:</span><br><span class="line">    - 面向连接：发送数据前建立连接(三次握手)，为可靠传输打下基础</span><br><span class="line">    - 仅支持单向传播：TCP连接只能连接两个端点，所以不支持多播和广播的方式</span><br><span class="line">    - 面向字节流：TCP不像UDP一样那样一个个报文独立地传输，而是在不保留报文边界的情况下以字节流方式进行传输。</span><br><span class="line">    - 可靠的传输：判断丢包，误码靠的是TCP的段编号以及确认号。TCP为了保证报文传输的可靠，就给每个包一个序号，同时序号也保证了传送到接收端实体的包的按序接收。然后接收端实体对已成功收到的字节发回一个相应的确认(ACK)；如果发送端实体在合理的往返时延(RTT)内未收到确认，那么对应的数据（假设丢失了）将会被重传。</span><br><span class="line">    - 提供拥塞控制：网络拥塞时，TCP可以减小向网络注入数据的速率及数量，减缓拥塞</span><br><span class="line">    - 提供全双工通讯：TCP允许通信双方的应用程序在任何时候都能发送数据，因为TCP连接的两端都设有缓存，用来临时存放双向通信的数据。当然，TCP可以立即发送一个数据段，也可以缓存一段时间以便一次发送更多的数据段（最大的数据段大小取决于MSS）</span><br><span class="line">UDP:</span><br><span class="line">    - 面向无连接：无需建立连接，只是数据报文的搬运工，不会对数据报文做任何的拆分和拼接</span><br><span class="line">    - 由单播、多播、广播的功能</span><br><span class="line">    - 面向报文：UDP对应用层交下来的报文，既不合并，也不拆分，而是保留这些报文的边界。因此，应用程序必须选择合适大小的报文</span><br><span class="line">    - 不可靠性：无连接，没有拥塞控制，会丢包</span><br><span class="line">    - 头部开销小，数据报文传输更高效</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>TCP连接的三次握手和四次挥手</p>
+</li>
+</ol>
+<p><a href="https://www.cnblogs.com/AhuntSun-blog/p/12028636.html" target="_blank" rel="noopener">https://www.cnblogs.com/AhuntSun-blog/p/12028636.html</a></p>
+<p>首先要了解TCP的报文格式：</p>
+<p><a href="http://img.bigyoung.cn:1111/image/Fn9N" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/04/30/cd85095d8d993c98dca916b427948077.png" alt="cd85095d8d993c98dca916b427948077.png"></a></p>
+<p>其中比较重要的字段有：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">（1）序号（sequence number）：Seq序号，占32位，用来标识从TCP源端向目的端发送的字节流，发起方发送数据时对此进行标记。</span><br><span class="line">（2）确认号（acknowledgement number）：Ack序号，占32位，只有ACK标志位为1时，确认序号字段才有效，Ack&#x3D;Seq+1。</span><br><span class="line">（3）标志位（Flags）：共6个，即URG、ACK、PSH、RST、SYN、FIN等，具体含义如下：</span><br><span class="line"></span><br><span class="line">    URG：紧急指针（urgent pointer）有效。</span><br><span class="line">    ACK：确认序号有效。</span><br><span class="line">    PSH：接收方应该尽快将这个报文交给应用层。</span><br><span class="line">    RST：重置连接。</span><br><span class="line">    SYN：发起一个新连接。</span><br><span class="line">    FIN：释放一个连接。</span><br><span class="line">    </span><br><span class="line">    需要注意的是：</span><br><span class="line">    不要将确认序号Ack与标志位中的ACK搞混了。</span><br><span class="line">    确认方Ack&#x3D;发起方Seq+1，两端配对。</span><br></pre></td></tr></table></figure>
+
+<p><strong>三次握手</strong></p>
+<p><a href="http://img.bigyoung.cn:1111/image/FxaZ" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/04/30/d2653ac0bc6310de747ad2870a0b4024.png" alt="d2653ac0bc6310de747ad2870a0b4024.png"></a></p>
+<figure class="highlight tex"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">1. 首先客户端向服务端发送一段TCP报文：</span><br><span class="line">    标记位为SYN，表示请求建立新连接，</span><br><span class="line">    序号为Seq=X(X一般为1)，随后客户端进入SYN-SENT阶段。</span><br><span class="line">2. 服务端接收到来自客户端的TCP报文之后，结束LISTEN阶段，并返回一段报文：</span><br><span class="line">    标记位为SYN和ACK，表示客户端报文有效，可以正常接收并同意建立连接</span><br><span class="line">    序号为Seq =y</span><br><span class="line">    确认号为Ack=X+1，在客户端发送的Seq的基础上+1作为自己的Ack值，随后服务端进入SYN-RCVD阶段。</span><br><span class="line">3. 客户端接收到服务端的确认数据之后，明确服务端传输正常，结束SYN-SENT阶段，并返回一段报文：</span><br><span class="line">    标记位为ACK，表示收到服务端同意连接的信号</span><br><span class="line">    序号为Seq=X+1，表示收到服务端的确认信号Ack，并将其值作为自己的序号值</span><br><span class="line">    确认号为Ack=y+1，表示收到服务端序号Seq，并将其+1作为自己的确认号Ack值</span><br><span class="line">    随后客户端进入ESTABLISHED阶段。</span><br><span class="line">服务端收到客户端发送的确认接收到的数据，结束SYN-RCVD阶段，进入ESTABLISHED阶段。</span><br></pre></td></tr></table></figure>
+
+<p><strong>四次挥手</strong></p>
+<p><a href="http://img.bigyoung.cn:1111/image/FlZR" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/04/30/8ce5cea3c7971af4441e11e86fefb80c.png" alt="8ce5cea3c7971af4441e11e86fefb80c.png"></a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">​</span><br></pre></td></tr></table></figure>
+<ol>
+<li><p>首先客户端想要释放请求，向服务端发送一段TCP报文：<br> 标记位为FIN，表示请求释放连接<br> 序号Seq=U<br> 随后客户端进入FIN—WAIT-1阶段，即半关闭阶段，停止客户端到服务端发送数据(不发送的是正常连接时传输的数据，仍可以发送ACK确认报文)，但是客户端仍然能接收到从服务端传过来的数据</p>
+</li>
+<li><p>服务端接收到客户端的TCP报文之后，确认客户端想要释放连接，随后服务端结束ESTABLISHED阶段，进入CLOSE-WAIT阶段（半关闭状态）并返回一段TCP报文：<br> 标记位为ACK，表示接收到客户端发送的释放连接的请求<br> 序号为Seq=V<br> 确认号为Ack=U+1，在客户端发送的基础上，seq+1作为Ack值<br> 客户端接收到从服务端发的报文后，确认服务端收到了释放连接的请求，随后客户端结束FIN-WAIT-1阶段，进入FIN-WAIT-2阶段。</p>
+</li>
+<li><p>服务端发送完ACK确认报文之后，经过CLOSED-WAIT阶段，做好释放服务端到客户端方向上的连接准备，在向客户端发送一段报文：<br> 标记位为FIN、ACK，表示已经准备好释放连接了<br> 序号为Seq=W<br> 确认号Ack=U+1，在客户端Seq基础上+1<br> 随后服务端结束CLOSE-WAIT阶段，进入LAST-ACK阶段，停止到客户端发送数据，但是可以接收客户端传输的数据</p>
+</li>
+<li><p>客户端收到服务端的TCP报文，确认服务端已经做好释放的准备，结束FIN-WAIT-2阶段，进入TIME-WAIT阶段，并向服务端发送一段报文：<br> 标记位为ACK，表示接收到了释放信号<br> 序号Seq=U+1<br> 确认序号Ack=U+1<br> 随后客户端在TIME-WAIT阶段等待2MSL<br>​```</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">4. 客户端在四次挥手TIME-WAIT最后为什么要等待2MSL？</span><br></pre></td></tr></table></figure>
+<p>为的是确认服务器端是否收到客户端发出的ACK确认报文</p>
+<p>当客户端发出最后的ACK确认报文时，并不能确定服务器端能够收到该段报文。所以客户端在发送完ACK确认报文之后，会设置一个时长为2MSL的计时器。MSL指的是Maximum Segment Lifetime：一段TCP报文在传输过程中的最大生命周期。2MSL即是服务器端发出为FIN报文和客户端发出的ACK确认报文所能保持有效的最大时长。</p>
+<p>服务器端在1MSL内没有收到客户端发出的ACK确认报文，就会再次向客户端发出FIN报文；</p>
+<p>如果客户端在2MSL内，再次收到了来自服务器端的FIN报文，说明服务器端由于各种原因没有接收到客户端发出的ACK确认报文。客户端再次向服务器端发出ACK确认报文，计时器重置，重新开始2MSL的计时；<br>否则客户端在2MSL内没有再次收到来自服务器端的FIN报文，说明服务器端正常接收了ACK确认报文，客户端可以进入CLOSED阶段，完成“四次挥手”。<br>所以，客户端要经历时长为2SML的TIME-WAIT阶段；这也是为什么客户端比服务器端晚进入CLOSED阶段的原因</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">https:&#x2F;&#x2F;www.cnblogs.com&#x2F;AhuntSun-blog&#x2F;p&#x2F;12037852.html</span><br><span class="line"></span><br><span class="line">3. 拥塞控制和流量控制都是什么，有什么区别？</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>如果发送者发送数据过快，接收者来不及接收，那么就会有分组丢失。为了避免分组丢失，控制发送者的发送速度，使得接收者来得及接收，这就是流量控制。流量控制根本目的是防止分组丢失，它是构成TCP可靠性的一方面。</p>
+</li>
+<li><p>如何实现流量控制？</p>
+<ul>
+<li>由滑动窗口协议（连续ARQ协议）实现。滑动窗口协议既保证了分组无差错、有序接收，也实现了流量控制。主要的方式就是接收方返回的 ACK 中会包含自己的接收窗口的大小，并且利用大小来控制发送方的数据发送。</li>
+<li>流量控制引发的死锁？怎么避免死锁的发生？</li>
+<li>当发送者收到了一个窗口为0的应答，发送者便停止发送，等待接收者的下一个应答。但是如果这个窗口不为0的应答在传输过程丢失，发送者一直等待下去，而接收者以为发送者已经收到该应答，等待接收新数据，这样双方就相互等待，从而产生死锁。</li>
+<li>为了避免流量控制引发的死锁，TCP使用了持续计时器。每当发送者收到一个零窗口的应答后就启动该计时器。时间一到便主动发送报文询问接收者的窗口大小。若接收者仍然返回零窗口，则重置该计时器继续等待；若窗口不为0，则表示应答报文丢失了，此时重置发送窗口后开始发送，这样就避免了死锁的产生。</li>
+</ul>
+</li>
+<li><p>拥塞控制和流量控制的区别 ?</p>
+<ul>
+<li>拥塞控制：拥塞控制是作用于网络的，它是防止过多的数据注入到网络中，避免出现网络负载过大的情况；常用的方法就是：（ 1 ）慢开始、拥塞避免（ 2 ）快重传、快恢复。</li>
+<li>流量控制：流量控制是作用于接收者的，它是控制发送者的发送速度从而使接收者来得及接收，防止分组丢失的</li>
+</ul>
+</li>
+</ul>
+<p>```</p>
+</li>
+</ol>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2017" class="archive-year">2017</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/" class="archive-article-date">
-  	<time datetime="2017-08-29T13:30:30.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-29</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/29/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E4%B8%8A%E5%B1%82%E5%8E%9F%E7%90%86%E6%B5%85%E6%9E%90/">Android基础总结系列：Binder上层原理浅析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">计算机基础</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/24/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder-AIDL%E7%9A%84%E4%BD%BF%E7%94%A8/" class="archive-article-date">
-  	<time datetime="2017-08-24T14:32:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-24</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2018/10/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AZygote%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Android基础总结系列：Zygote进程的启动流程</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/24/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder-AIDL%E7%9A%84%E4%BD%BF%E7%94%A8/">Android基础总结系列：Binder AIDL的使用</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/" class="archive-article-date">
-  	<time datetime="2017-08-20T14:50:41.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-20</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/20/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-IPC-%E7%AE%80%E4%BB%8B/">Android基础总结系列：Android IPC 简介</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/" class="archive-article-date">
-  	<time datetime="2017-08-18T13:30:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-08-18</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/08/18/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9AAndroid-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E%E5%90%AF%E5%8A%A8%E6%A8%A1%E5%BC%8F/">Android基础总结系列：Android 生命周期与启动模式</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
   
-  
-    </div></section>
-  
-
-    
 
 
           </div>
@@ -324,8 +346,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,
