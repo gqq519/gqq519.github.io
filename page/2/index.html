@@ -136,6 +136,159 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-Android基础总结系列：Binder的IPC方式" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/09/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E7%9A%84IPC%E6%96%B9%E5%BC%8F/">Android基础总结系列：Binder的IPC方式</a>
+    </h1>
+  
+
+        
+        <a href="/2017/09/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E7%9A%84IPC%E6%96%B9%E5%BC%8F/" class="archive-article-date">
+  	<time datetime="2017-09-01T15:35:57.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-09-01</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Binder的IPC方式"><a href="#Binder的IPC方式" class="headerlink" title="Binder的IPC方式"></a>Binder的IPC方式</h3><p>[TOC]</p>
+<h4 id="1-Bundle"><a href="#1-Bundle" class="headerlink" title="1. Bundle"></a>1. Bundle</h4><p>四大组件中三大组件(Activity、Service、Receiver)都支持Intent传递Bundle数据，Bundle实现了Parcelable接口，所以可以在不同进程间传输，具体传递的数据类型，可以根据Bundle所支持的类型。</p>
+<h4 id="2-文件共享"><a href="#2-文件共享" class="headerlink" title="2. 文件共享"></a>2. 文件共享</h4><p>两个进程通过读/写同一个文件来进行交换数据。</p>
+<ul>
+<li>通过 ObjectOutputStream / ObjectInputStream 序列化一个对象到文件中，或者在另一个进程从文件中反序列这个对象。注意：反序列化得到的对象只是内容上和序列化之前的对象一样，本质是两个对象。</li>
+<li>文件并发读写会导致读出的对象可能不是最新的，并发写的话那就更严重了 。所以文件共享方式适合对数据同步要求不高的进程之间进行通信，并且要妥善处理并发读写问题。</li>
+<li>SharedPreferences 底层实现采用XML文件来存储键值对。系统对它的读/写有一定的缓存策略，即在内存中会有一份 SharedPreferences 文件的缓存，因此在多进程模式下，系统对它的读/写变得不可靠，面对高并发读/写时 SharedPreferences 有很大几率丢失数据，因此不建议在IPC中使用 SharedPreferences 。</li>
+</ul>
+<h4 id="3-Messenger"><a href="#3-Messenger" class="headerlink" title="3. Messenger"></a>3. Messenger</h4><p>Messenger是一种轻量级的IPC方案，他的底层实现是AIDL，这个可以通过他的构造方法看到：<code>mTarget = IMessenger.Stub.asInterface(target);</code></p>
+<p><strong>1. 服务端进程</strong></p>
+<p>创建Service，同时创建Handler并通过它创建Messenger，在service的onBind中返回Messenger底层的Binder。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MessengerService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Messenger messenger = <span class="keyword">new</span> Messenger(<span class="keyword">new</span> MessengerHandler());</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> messenger.getBinder();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MessengerHandler</span> <span class="keyword">extends</span> <span class="title">Handler</span> </span>&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleMessage</span><span class="params">(Message msg)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>.handleMessage(msg);</span><br><span class="line">            Log.i(<span class="string">"TAG"</span>, <span class="string">"receive message from client:"</span> + msg.getData().getString(<span class="string">"msg"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>2. 客户端进程</strong></p>
+<p>绑定服务端的Service，绑定成功后用服务端返回的IBinder创建Messenger，通过这个Messenger的send方法就可以给服务端发送消息了，发送消息的类型为Message对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Messenger serviceMessenger;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">(Bundle savedInstanceState)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.onCreate(savedInstanceState);</span><br><span class="line">    setContentView(R.layout.activity_main);</span><br><span class="line">    Intent intent = <span class="keyword">new</span> Intent();</span><br><span class="line">    intent.setAction(<span class="string">"com.gqq.messengerservice"</span>);</span><br><span class="line">    <span class="comment">// 5.0以上需要设置，服务端包名</span></span><br><span class="line">    intent.setPackage(<span class="string">"com.gqq.messengerdemo"</span>);</span><br><span class="line">    bindService(intent, connection, Context.BIND_AUTO_CREATE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> ServiceConnection connection = <span class="keyword">new</span> ServiceConnection() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceConnected</span><span class="params">(ComponentName name, IBinder service)</span> </span>&#123;</span><br><span class="line">        serviceMessenger = <span class="keyword">new</span> Messenger(service);</span><br><span class="line">        Message message = Message.obtain();</span><br><span class="line">        Bundle bundle = <span class="keyword">new</span> Bundle();</span><br><span class="line">        bundle.putString(<span class="string">"msg"</span>, <span class="string">"hello, I am client"</span>);</span><br><span class="line">        message.setData(bundle);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            serviceMessenger.send(message);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">            Log.i(<span class="string">"TAG"</span>, e.getMessage());</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceDisconnected</span><span class="params">(ComponentName name)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>案例</strong></p>
+<p>如果需要服务端可以回应客户端，也需要在客户端创建一个Handler并创建Messenger，并通过Message的replyTo参数传递给服务端。</p>
+<p>具体案例参考：<a href="https://github.com/gqq519/MessengerDemo" target="_blank" rel="noopener">MessengerDemo</a></p>
+<p><strong>工作原理</strong></p>
+<p><a href="http://img.bigyoung.cn:1111/image/Uf86" target="_blank" rel="noopener"><img src="http://img.bigyoung.cn:1111/images/2020/08/25/629465c00d05f6e18ab179664e3ea654.png" alt="629465c00d05f6e18ab179664e3ea654.png"></a></p>
+<h4 id="4-AIDL"><a href="#4-AIDL" class="headerlink" title="4. AIDL"></a>4. AIDL</h4><p>Messenger不适合应用于有大量并发请求的情况，Messenger的主要的作用是为了传递消息，另外，如果我们需要跨进程调用服务端的方法，那Messenger就无法做到了，可以通过AIDL实现。</p>
+<p>参考：<a href="https://blog.csdn.net/gqqzxc/article/details/80060369" target="_blank" rel="noopener">Binder：AIDL</a></p>
+<h4 id="5-ContentProvider"><a href="#5-ContentProvider" class="headerlink" title="5. ContentProvider"></a>5. ContentProvider</h4><p>ContentProvider是Android提供的专门用于不同进程间数据共享的方式，和Messenger一样底层实现是Binder。</p>
+<p>系统预置了许多ContentProvider，比如通信录、日程表信息等，只需要通过ContentResolver的query、update、insert和delete方法即可。</p>
+<p>创建自定义的ContentProvider，只需继承ContentProvider类并实现 onCreate 、 query 、 update 、 insert 、 getType 六个抽象方法即可。getType用来返回一个Uri请求所对应的MIME类型，剩下四个方法对应于CRUD操作。这六个方法都运行在ContentProvider进程中，除了 onCreate 由系统回调并运行在主线程里，其他五个方法都由外界调用并运行在Binder线程池中。</p>
+<p>ContentProvider是通过Uri来区分外界要访问的数据集合，例如外界访问ContentProvider中的表，我们需要为它们定义单独的Uri和Uri_Code。根据Uri_Code，我们就知道要访问哪个表了。</p>
+<p><strong>query、update、insert、delete四大方法存在多线程并发访问，因此方法内部要做好线程同步。</strong> 若采用SQLite并且只有一个SQLiteDatabase，SQLiteDatabase内部已经做了同步处理。若是多个SQLiteDatabase或是采用List作为底层数据集，就必须做线程同步。</p>
+<p>参考Demo：<a href="https://github.com/gqq519/ContentProviderDemo" target="_blank" rel="noopener">案例Demo</a></p>
+<h4 id="6-Socket"><a href="#6-Socket" class="headerlink" title="6. Socket"></a>6. Socket</h4><p>Socket 又称为“套接字”，分为流式套接字和用户数据报套接字，分别对应网络传输层的TCP和UDP协议。</p>
+<p>参考Demo：<a href="https://note.youdao.com/" target="_blank" rel="noopener">SocketDemo</a></p>
+<h4 id="IPC方式的优缺点及使用场景"><a href="#IPC方式的优缺点及使用场景" class="headerlink" title="IPC方式的优缺点及使用场景"></a>IPC方式的优缺点及使用场景</h4><table>
+<thead>
+<tr>
+<th align="center">名称</th>
+<th align="center">优点</th>
+<th align="center">缺点</th>
+<th align="center">适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">Bundle</td>
+<td align="center">简单易用</td>
+<td align="center">只能传递Bundle支持的数据类型</td>
+<td align="center">四大组件间的进程间通讯</td>
+</tr>
+<tr>
+<td align="center">文件共享</td>
+<td align="center">简单易用</td>
+<td align="center">不适合高并发，并且无法做到进程间的即时通讯</td>
+<td align="center">无并发访问场景，交换简单数据且实时性不高的场景</td>
+</tr>
+<tr>
+<td align="center">AIDL</td>
+<td align="center">功能强大，支持一对多并发通讯且实时通讯</td>
+<td align="center">使用复杂，需要处理好线程同步</td>
+<td align="center">一对多通讯且RPC需求</td>
+</tr>
+<tr>
+<td align="center">Messenger</td>
+<td align="center">功能一般，支持一对多的串行通讯，支持实时通讯</td>
+<td align="center">不能很好的处理高并发，不支持RPC，数据通过Message传输，因此只能传递Bundle支持的类型数据</td>
+<td align="center">低并发的即时通讯，无需支持RPC或者不需要返回结果的RPC需求</td>
+</tr>
+<tr>
+<td align="center">ContentProvider</td>
+<td align="center">数据源访问方面功能强大，支持一对多的高并发数据共享，可以通过Call扩展其他功能</td>
+<td align="center">可以理解为受约束的AIDL，主要提供数据源的CRUD操作</td>
+<td align="center">一对多的进程间数据共享</td>
+</tr>
+<tr>
+<td align="center">Socket</td>
+<td align="center">功能强大，可以通过网络传输字节流，支持一对多的并发通讯</td>
+<td align="center">实现细节繁琐，不支持直接的RPC</td>
+<td align="center">网路数据交换</td>
+</tr>
+</tbody></table>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Android基础</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2017/09/01/Android%E5%9F%BA%E7%A1%80%E6%80%BB%E7%BB%93%E7%B3%BB%E5%88%97%EF%BC%9ABinder%E7%9A%84IPC%E6%96%B9%E5%BC%8F/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-Android基础总结系列：Binder上层原理浅析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
