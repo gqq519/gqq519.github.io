@@ -136,19 +136,19 @@
           <div id="js-content" class="content-ll">
             
   
-    <article id="post-MotionLayout" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+    <article id="post-Android基础系列：MotionLayout" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/10/26/MotionLayout/">MotionLayout</a>
+      <a class="article-title" href="/2020/10/26/Android%E5%9F%BA%E7%A1%80%E7%B3%BB%E5%88%97%EF%BC%9AMotionLayout/">MotionLayout</a>
     </h1>
   
 
         
-        <a href="/2020/10/26/MotionLayout/" class="archive-article-date">
+        <a href="/2020/10/26/Android%E5%9F%BA%E7%A1%80%E7%B3%BB%E5%88%97%EF%BC%9AMotionLayout/" class="archive-article-date">
   	<time datetime="2020-10-26T15:32:05.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-10-26</time>
 </a>
         
@@ -156,43 +156,26 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <ul>
-<li><ul>
-<li><ul>
-<li>MotionLayout<ul>
-<li><a href="#依赖项">依赖项</a></li>
-<li><a href="#创建motionlayout">创建MotionLayout</a></li>
-<li>创建MotionScene<ul>
-<li><a href="#transition">Transition</a></li>
-</ul>
-</li>
-<li><a href="#示例demo">示例Demo</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="MotionLayout"><a href="#MotionLayout" class="headerlink" title="MotionLayout"></a>MotionLayout</h3><p>MotionLayout 是一种布局类型，可以帮助管理应用中的运动和微件动画，<code>MotionLayout</code> 是 <a href="https://developer.android.com/training/constraint-layout?hl=zh-cn" target="_blank" rel="noopener"><code>ConstraintLayout</code></a> 的子类，在其丰富的布局功能基础之上构建而成。</p>
+        <p>[TOC]</p>
+<h2 id="MotionLayout"><a href="#MotionLayout" class="headerlink" title="MotionLayout"></a>MotionLayout</h2><p>MotionLayout 是一种布局类型，可以帮助管理应用中的运动和微件动画，<code>MotionLayout</code> 是 <a href="https://developer.android.com/training/constraint-layout?hl=zh-cn" target="_blank" rel="noopener"><code>ConstraintLayout</code></a> 的子类，在其丰富的布局功能基础之上构建而成。</p>
 <p><code>MotionLayout</code> 缩小了布局转换与复杂运动处理之间的差距，同时在<a href="https://developer.android.com/guide/topics/graphics/prop-animation?hl=zh-cn" target="_blank" rel="noopener">属性动画框架</a>、<a href="https://developer.android.com/training/transitions?hl=zh-cn" target="_blank" rel="noopener"><code>TransitionManager</code></a> 和 <a href="https://developer.android.com/reference/androidx/coordinatorlayout/widget/CoordinatorLayout?hl=zh-cn" target="_blank" rel="noopener"><code>CoordinatorLayout</code></a>之间提供了各种功能。</p>
 <p><code>MotionLayout</code> 还能够让您为任何布局属性添加动画效果。此外，它本身就支持<em>可搜索转换</em>。也就是说，您可以根据某个条件（例如触控输入）立即显示转换中的任意点。<code>MotionLayout</code> 还支持关键帧，从而实现完全自定义的转换以满足您的需求。<code>MotionLayout</code> 是完全声明性的，可以使用 XML 描述任何转换。</p>
 <p><strong>注意：MotionLayout 仅适用于其直接子级，不支持嵌套布局层次结构或 Activity 转换。</strong></p>
-<h4 id="依赖项"><a href="#依赖项" class="headerlink" title="依赖项"></a>依赖项</h4><p><strong>添加 ConstraintLayout 依赖项</strong>：要在项目中使用 <code>MotionLayout</code>，请向应用的 <code>build.gradle</code> 文件添加 <code>ConstraintLayout</code> 2.0 依赖项。如果您使用了 AndroidX，请添加以下依赖项：</p>
+<h3 id="依赖项"><a href="#依赖项" class="headerlink" title="依赖项"></a>依赖项</h3><p><strong>添加 ConstraintLayout 依赖项</strong>：要在项目中使用 <code>MotionLayout</code>，请向应用的 <code>build.gradle</code> 文件添加 <code>ConstraintLayout</code> 2.0 依赖项。如果您使用了 AndroidX，请添加以下依赖项：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">    implementation &#39;androidx.constraintlayout:constraintlayout:2.0.0-beta1&#39;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>如果您没有使用 AndroidX，请添加以下支持库依赖项：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;        </span><br><span class="line">	implementation &#39;com.android.support.constraint:constraint-layout:2.0.0-beta1&#39;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p><strong>注意：constraintlayout 2.0.0-beta3 及以上版本才支持MotionLayout可视化编辑</strong></p>
-<h4 id="创建MotionLayout"><a href="#创建MotionLayout" class="headerlink" title="创建MotionLayout"></a>创建MotionLayout</h4><p>创建要显示的页面的Layout布局文件：</p>
+<h3 id="创建MotionLayout"><a href="#创建MotionLayout" class="headerlink" title="创建MotionLayout"></a>创建MotionLayout</h3><p>创建要显示的页面的Layout布局文件：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version&#x3D;&quot;1.0&quot; encoding&#x3D;&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;!-- activity_main.xml --&gt;</span><br><span class="line">&lt;androidx.constraintlayout.motion.widget.MotionLayout</span><br><span class="line">    xmlns:android&#x3D;&quot;http:&#x2F;&#x2F;schemas.android.com&#x2F;apk&#x2F;res&#x2F;android&quot;</span><br><span class="line">    xmlns:app&#x3D;&quot;http:&#x2F;&#x2F;schemas.android.com&#x2F;apk&#x2F;res-auto&quot;</span><br><span class="line">    xmlns:tools&#x3D;&quot;http:&#x2F;&#x2F;schemas.android.com&#x2F;tools&quot;</span><br><span class="line">    android:id&#x3D;&quot;@+id&#x2F;motionLayout&quot;</span><br><span class="line">    android:layout_width&#x3D;&quot;match_parent&quot;</span><br><span class="line">    android:layout_height&#x3D;&quot;match_parent&quot;</span><br><span class="line">    app:layoutDescription&#x3D;&quot;@xml&#x2F;activity_view_scene&quot;</span><br><span class="line">    app:motionDebug&#x3D;&quot;SHOW_PATH&quot;</span><br><span class="line">    tools:showPaths&#x3D;&quot;true&quot;&gt;</span><br><span class="line"></span><br><span class="line">    &lt;View</span><br><span class="line">        android:id&#x3D;&quot;@+id&#x2F;button&quot;</span><br><span class="line">        android:layout_width&#x3D;&quot;64dp&quot;</span><br><span class="line">        android:layout_height&#x3D;&quot;64dp&quot;</span><br><span class="line">        android:background&#x3D;&quot;@color&#x2F;colorAccent&quot;</span><br><span class="line">        android:text&#x3D;&quot;Button&quot; &#x2F;&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:id&#x3D;&quot;@+id&#x2F;textview&quot;</span><br><span class="line">        android:layout_width&#x3D;&quot;wrap_content&quot;</span><br><span class="line">        android:layout_height&#x3D;&quot;wrap_content&quot;</span><br><span class="line">        android:text&#x3D;&quot;welcome to MotionLayout!!!&quot;</span><br><span class="line">        android:visibility&#x3D;&quot;gone&quot;</span><br><span class="line">        android:textStyle&#x3D;&quot;bold&quot;</span><br><span class="line">        android:textSize&#x3D;&quot;24sp&quot; &#x2F;&gt;</span><br><span class="line"></span><br><span class="line">&lt;&#x2F;androidx.constraintlayout.motion.widget.MotionLayout&gt;</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li>MotionLayout作为运动处理的View的根节点</li>
 <li>layoutDescription属性指向一个xml文件，包含相应布局的所有运动描述，每一个MotionLayout都应该引用一个单独的MotionScene。MotionScene中的描述优先级最高。</li>
 </ul>
-<h4 id="创建MotionScene"><a href="#创建MotionScene" class="headerlink" title="创建MotionScene"></a>创建MotionScene</h4><p>layoutDescription需要指向一个所有运动描述的xml文件，创建MotionScene文件：</p>
+<h3 id="创建MotionScene"><a href="#创建MotionScene" class="headerlink" title="创建MotionScene"></a>创建MotionScene</h3><p>layoutDescription需要指向一个所有运动描述的xml文件，创建MotionScene文件：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version&#x3D;&quot;1.0&quot; encoding&#x3D;&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;MotionScene xmlns:android&#x3D;&quot;http:&#x2F;&#x2F;schemas.android.com&#x2F;apk&#x2F;res&#x2F;android&quot;</span><br><span class="line">    xmlns:motion&#x3D;&quot;http:&#x2F;&#x2F;schemas.android.com&#x2F;apk&#x2F;res-auto&quot;&gt;</span><br><span class="line"></span><br><span class="line">    &lt;!--  定义的基本运动  --&gt;</span><br><span class="line">    &lt;Transition</span><br><span class="line">        motion:constraintSetEnd&#x3D;&quot;@+id&#x2F;end&quot;</span><br><span class="line">        motion:constraintSetStart&#x3D;&quot;@+id&#x2F;start&quot;</span><br><span class="line">        motion:duration&#x3D;&quot;2000&quot;&gt;</span><br><span class="line">        &lt;!--    通过点击控制运动    --&gt;</span><br><span class="line">        &lt;OnClick</span><br><span class="line">            motion:clickAction&#x3D;&quot;toggle&quot;</span><br><span class="line">            motion:touchAnchorId&#x3D;&quot;@+id&#x2F;button&quot; &#x2F;&gt;</span><br><span class="line"></span><br><span class="line">        &lt;!--    通过轻触&#x2F;拖动控制运动    --&gt;</span><br><span class="line">        &lt;OnSwipe</span><br><span class="line">            motion:dragDirection&#x3D;&quot;dragRight&quot;</span><br><span class="line">            motion:touchAnchorId&#x3D;&quot;@+id&#x2F;button&quot;</span><br><span class="line">            motion:touchAnchorSide&#x3D;&quot;bottom&quot; &#x2F;&gt;</span><br><span class="line"></span><br><span class="line">        &lt;KeyFrameSet&gt;</span><br><span class="line">            &lt;!--      关键帧    --&gt;</span><br><span class="line">            &lt;KeyPosition</span><br><span class="line">                motion:framePosition&#x3D;&quot;25&quot;</span><br><span class="line">                motion:keyPositionType&#x3D;&quot;parentRelative&quot;</span><br><span class="line">                motion:motionTarget&#x3D;&quot;@id&#x2F;button&quot;</span><br><span class="line">                motion:percentX&#x3D;&quot;0.2&quot;</span><br><span class="line">                motion:percentY&#x3D;&quot;0.2&quot; &#x2F;&gt;</span><br><span class="line"></span><br><span class="line">            &lt;!--     关键帧属性设置       --&gt;</span><br><span class="line">            &lt;KeyAttribute</span><br><span class="line">                motion:framePosition&#x3D;&quot;50&quot;</span><br><span class="line">                motion:motionTarget&#x3D;&quot;@id&#x2F;button&quot;</span><br><span class="line">                android:rotation&#x3D;&quot;-45&quot;</span><br><span class="line">                android:scaleX&#x3D;&quot;2.0&quot;</span><br><span class="line">                android:scaleY&#x3D;&quot;2.0&quot; &#x2F;&gt;</span><br><span class="line"> </span><br><span class="line">            &lt;!--     控件的显示和隐藏     --&gt;</span><br><span class="line">            &lt;KeyAttribute</span><br><span class="line">                android:alpha&#x3D;&quot;0&quot;</span><br><span class="line">                motion:framePosition&#x3D;&quot;0&quot;</span><br><span class="line">                motion:motionTarget&#x3D;&quot;@id&#x2F;textview&quot; &#x2F;&gt;</span><br><span class="line"></span><br><span class="line">            &lt;!--      自定义关键帧属性，类似于属性动画，利用反射的方式，存在setattributeName      --&gt;</span><br><span class="line">            &lt;KeyAttribute</span><br><span class="line">                motion:framePosition&#x3D;&quot;0&quot;</span><br><span class="line">                motion:motionTarget&#x3D;&quot;@id&#x2F;button&quot;&gt;</span><br><span class="line">                &lt;CustomAttribute</span><br><span class="line">                    motion:attributeName&#x3D;&quot;backgroundColor&quot;</span><br><span class="line">                    motion:customColorValue&#x3D;&quot;#FF0&quot; &#x2F;&gt;</span><br><span class="line">            &lt;&#x2F;KeyAttribute&gt;</span><br><span class="line">        &lt;&#x2F;KeyFrameSet&gt;</span><br><span class="line">    &lt;&#x2F;Transition&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    &lt;!--  基本运动中各种限制条件的位置，主要是端点  --&gt;</span><br><span class="line">    &lt;ConstraintSet android:id&#x3D;&quot;@+id&#x2F;start&quot;&gt;</span><br><span class="line">        &lt;Constraint</span><br><span class="line">            android:id&#x3D;&quot;@+id&#x2F;button&quot;</span><br><span class="line">            android:layout_width&#x3D;&quot;64dp&quot;</span><br><span class="line">            android:layout_height&#x3D;&quot;64dp&quot;</span><br><span class="line">            android:layout_marginStart&#x3D;&quot;8dp&quot;</span><br><span class="line">            motion:layout_constraintBottom_toBottomOf&#x3D;&quot;parent&quot;</span><br><span class="line">            motion:layout_constraintStart_toStartOf&#x3D;&quot;parent&quot;</span><br><span class="line">            motion:layout_constraintTop_toTopOf&#x3D;&quot;parent&quot; &#x2F;&gt;</span><br><span class="line">    &lt;&#x2F;ConstraintSet&gt;</span><br><span class="line"></span><br><span class="line">    &lt;ConstraintSet android:id&#x3D;&quot;@+id&#x2F;end&quot;&gt;</span><br><span class="line">        &lt;Constraint</span><br><span class="line">            android:id&#x3D;&quot;@+id&#x2F;button&quot;</span><br><span class="line">            android:layout_width&#x3D;&quot;64dp&quot;</span><br><span class="line">            android:layout_height&#x3D;&quot;64dp&quot;</span><br><span class="line">            android:layout_marginEnd&#x3D;&quot;8dp&quot;</span><br><span class="line">            motion:layout_constraintBottom_toBottomOf&#x3D;&quot;parent&quot;</span><br><span class="line">            motion:layout_constraintEnd_toEndOf&#x3D;&quot;parent&quot;</span><br><span class="line">            motion:layout_constraintTop_toTopOf&#x3D;&quot;parent&quot; &#x2F;&gt;</span><br><span class="line">    &lt;&#x2F;ConstraintSet&gt;</span><br><span class="line"></span><br><span class="line">&lt;&#x2F;MotionScene&gt;</span><br></pre></td></tr></table></figure>
 
 <p>编辑和预览MotionScene，可以利用可视化窗口：</p>
@@ -203,7 +186,8 @@
 <li>创建Transition，设置start和end的运动描述，并设置多种运动属性。</li>
 </ol>
 <p>具体内容如下：</p>
-<h5 id="Transition"><a href="#Transition" class="headerlink" title="Transition"></a>Transition</h5><p>Transition描述运动过程，每一个MotionScene至少包含一个Transiton，描述一个动画start到end过程中的运动。Transition包含多种子标签：</p>
+<p>*<em>Transition: *</em></p>
+<p>Transition描述运动过程，每一个MotionScene至少包含一个Transiton，描述一个动画start到end过程中的运动。Transition包含多种子标签：</p>
 <ul>
 <li><p><strong>OnClick</strong> 点击触发运动，<strong>clickAction</strong>设置运动模式，<strong>targetId</strong>设置目标view</p>
 </li>
@@ -218,7 +202,7 @@
 <li>KeyAttribute：alpha、scaleX、scaleY、rotation等</li>
 <li>CustomAttribute：<strong>attributeName</strong> 通过setXXX可以修改view属性的名称，比如setBackgroundColor，那么attributeName=”backgroundColor”，<strong>customColorValue</strong> 属性名对应的属性值</li>
 </ul>
-<h4 id="示例Demo"><a href="#示例Demo" class="headerlink" title="示例Demo"></a>示例Demo</h4><p>详见：MotionLayout：<a href="https://github.com/gqq519/MotionLayout%EF%BC%8Cactivity_scroll.xml" target="_blank" rel="noopener">https://github.com/gqq519/MotionLayout，activity_scroll.xml</a></p>
+<h3 id="示例Demo"><a href="#示例Demo" class="headerlink" title="示例Demo"></a>示例Demo</h3><p>详见：MotionLayout：<a href="https://github.com/gqq519/MotionLayout%EF%BC%8Cactivity_scroll.xml" target="_blank" rel="noopener">https://github.com/gqq519/MotionLayout</a></p>
 <p>参考资料：</p>
 <ul>
 <li><a href="https://developer.android.com/training/constraint-layout/motionlayout?hl=zh-cn" target="_blank" rel="noopener">使用 MotionLayout 管理运动和微件动画</a></li>
@@ -253,7 +237,7 @@
 
       
         <p class="article-more-link">
-          <a class="article-more-a" href="/2020/10/26/MotionLayout/">展开全文 >></a>
+          <a class="article-more-a" href="/2020/10/26/Android%E5%9F%BA%E7%A1%80%E7%B3%BB%E5%88%97%EF%BC%9AMotionLayout/">展开全文 >></a>
         </p>
       
 
