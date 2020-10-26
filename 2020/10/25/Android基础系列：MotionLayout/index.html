@@ -17,7 +17,7 @@
 <meta property="og:locale" content="zh">
 <meta property="og:image" content="http://img.bigyoung.cn:1111/images/2020/10/26/60b6c99612e8e6b3e47ec84411e028e9.png?ynotemdtimestamp=1603726268778">
 <meta property="article:published_time" content="2020-10-25T15:32:05.000Z">
-<meta property="article:modified_time" content="2020-10-26T15:49:42.001Z">
+<meta property="article:modified_time" content="2020-10-26T15:55:27.981Z">
 <meta property="article:author" content="gqq519">
 <meta property="article:tag" content="Android基础">
 <meta name="twitter:card" content="summary">
@@ -170,10 +170,10 @@
 </ul>
 <p><strong>注意：MotionLayout 仅适用于其直接子级，不支持嵌套布局层次结构或 Activity 转换。</strong></p>
 <h3 id="依赖项"><a href="#依赖项" class="headerlink" title="依赖项"></a>依赖项</h3><p><strong>添加 ConstraintLayout 依赖项</strong>：要在项目中使用 <code>MotionLayout</code>，请向应用的 <code>build.gradle</code> 文件添加 <code>ConstraintLayout</code> 2.0 依赖项。如果您使用了 AndroidX，请添加以下依赖项：</p>
-<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">    implementation <span class="string">'androidx.constraintlayout:constraintlayout:2.0.0-beta1'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">    implementation <span class="string">'androidx.constraintlayout:constraintlayout:2.0.0-beta3'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>如果您没有使用 AndroidX，请添加以下支持库依赖项：</p>
-<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;        </span><br><span class="line">	implementation <span class="string">'com.android.support.constraint:constraint-layout:2.0.0-beta1'</span>    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;        </span><br><span class="line">	implementation <span class="string">'com.android.support.constraint:constraint-layout:2.0.0-beta3'</span>    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p><strong>注意：constraintlayout 2.0.0-beta3 及以上版本才支持MotionLayout可视化编辑</strong></p>
 <h3 id="创建MotionLayout"><a href="#创建MotionLayout" class="headerlink" title="创建MotionLayout"></a>创建MotionLayout</h3><p>创建要显示的页面的Layout布局文件：</p>
